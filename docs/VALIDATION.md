@@ -102,3 +102,19 @@ Windows Git settings. Windows CI additionally executes `sample.bat` itself.
 
 Current-head hosted checks and an independent reviewer verdict are required
 before merge. Consult the linked PR for their exact SHA, logs, and final result.
+
+## Cross-platform numeric parsing regression
+
+[Hosted run 39899594757](https://github.com/cttsai1985/StringKernel4LIBSVM/actions/runs/39899594757)
+established additional RED evidence after the build corrections. macOS rejected
+the valid subnormal in `dataset labels retain the finite double range and signed
+zero`; macOS and Windows both accepted the hexadecimal token in `malformed
+dataset records identify the source and physical line`. Linux passed those
+same existing assertions.
+
+The correction uses decimal `std::from_chars` with complete-token, range, and
+finite-value checks, preserving a single optional leading plus. It removes
+standard-stream parsing differences without relaxing the expected values.
+Additional process checks cover subnormal/maximal finite labels and malformed
+hexadecimal/double-sign inputs. MEASURED corrected local development suite:
+39/39 CTest checks passed. The hosted matrix remains the cross-platform gate.
