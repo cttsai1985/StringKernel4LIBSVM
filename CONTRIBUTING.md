@@ -40,9 +40,11 @@ after the explicit bootstrap step.
 
 ## Finish the change
 
-The PR must pass CI on its current commit before merge to `master`. Close the
-tracking issue with evidence after merge, then remove the implementation
-worktree. Keep a regression gate that fails if the fixed behavior returns.
+Branch from `origin/dev` and target feature PRs to `dev`. Preserve ordered
+commits when merging; promote verified `dev` changes to `master` through a PR.
+Every PR must pass CI and independent review on its current commit. Close the
+tracking issue with evidence after master promotion, then remove the
+implementation worktree. Keep a regression gate that fails if the fixed behavior returns.
 Do not rewrite an operator's working tree with `git reset --hard` or `git stash`.
 
 The owner has not selected a project license. Do not add or imply a new license

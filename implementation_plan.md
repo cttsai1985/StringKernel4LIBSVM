@@ -1,8 +1,8 @@
 # LIBSVM bootstrap cleanup plan
 
-Status: authorized by the owner to plan, track, implement, verify, and land through
-`dev` followed by `master`, with ordered commits. Root review is required before
-merging. Previous modernization evidence remains in `docs/VALIDATION.md` and Git.
+Status: implementation and local/fresh-archive verification complete; PR #4 targets
+`dev` for independent root review and exact-head hosted CI. Master promotion and
+issue #3 closeout remain with the root. Preserve ordered commits. Previous modernization evidence remains in `docs/VALIDATION.md` and Git.
 
 ## Goal and risk
 

@@ -154,3 +154,18 @@ and dependency/layout pins. Project-only coverage was 260/262 lines (99.2%),
 28/28 functions (100%), and 382/508 branches (75.2%); the 98% line gate passed.
 The local Catch2 source override and temporary-directory environment remain as
 documented above.
+
+MEASURED fresh-source verification used `git archive` of implementation commit
+`8ba1ab61efebb14c7982ed6859d451a13eb34c34`, rather than the warm worktree cache.
+`git ls-files third_party/libsvm` was empty and the archive contained no dependency
+sources. Production configure failed with the explicit bootstrap command. The
+actual official download then passed all independent pins, a clean development
+build succeeded, and all 40 CTest checks passed. The literal updated README Unix
+workflow also built successfully and produced eight training rows, six target
+rows, and six finite predictions. Existing integration checks verify numerical
+values and solver predictions independently, beyond those artifact counts.
+
+CI checks a clean checkout before bootstrap on Linux, macOS, and Windows; the
+source-tracking check and expected configure failure prevent a committed solver
+copy or implicit setup from silently returning. Consult PR #4 for exact-head
+hosted results and independent review before the dev/master promotion.
