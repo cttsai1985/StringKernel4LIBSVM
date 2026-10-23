@@ -1,68 +1,29 @@
-#ifndef __StringKernels_h
-#define __StringKernels_h
+#ifndef STRINGKERNEL_STRING_KERNELS_H
+#define STRINGKERNEL_STRING_KERNELS_H
 
-#include <string>
-#include <vector>
+#include <cstddef>
+#include <string_view>
 
-using namespace std;
+namespace stringkernel {
 
-enum {DSK, WDSK};
+enum class KernelType { distance = 0, weighted_degree = 1 };
 
-struct DataSet
-{
-	int size;
-	int count_compute_self;
-	int count_compute_kernel;//amount of training vectors
-	vector<string> seq;
-	vector<double> value;
-	vector<double> normalized_value;
-	vector<double> self;
+struct KernelConfig {
+    KernelType type = KernelType::weighted_degree;
+    int degree = 5;
 
-
-	double** precomputed;
-
-	void initialize();
-	void normalize();
-
-	void copy(struct DataSet* from, struct DataSet* to);
-	void erase_one_char_in_string(int no);
-	void erase_chars_in_string(const int* no_array);
-	void printout();
-	void clear();
+    void validate() const;
 };
 
-struct KernelConfig
-{
-	int option_rbf;
-	int kernel_type, kmer;
-	double gamma;
+// The requested degree determines weights even when a sequence is shorter.
+double degree_weight(int degree, std::size_t order);
+double weighted_degree(std::string_view a, std::string_view b, int degree);
+double weighted_degree_self(std::string_view sequence, int degree);
 
-	double* weighting_coef;
+// Nonfinite or negative inputs are invalid; a zero self-kernel yields zero.
+double normalize_kernel(double value, double self_a, double self_b);
+double kernel_value(std::string_view a, std::string_view b, const KernelConfig& config);
 
-	KernelConfig(int k_t, int k);
-    void SetKmer(int k){
-        kmer=k;}
-	void SetCoef();
-	void SetGamma(double value){
-        gamma=value;}
+} // namespace stringkernel
 
-};
-
-int LoadDataset(string filename, struct DataSet* T_DATASET);
-int ComputeDKernel(struct KernelConfig* KC, struct DataSet* ref, struct DataSet* target);
-int ComputeWDKernel(struct KernelConfig* KC, struct DataSet* ref, struct DataSet* target);
-
-int PreComputeDKernel(struct KernelConfig* KC, struct DataSet* ref, struct DataSet* target);
-int PreComputeWDKernel(struct KernelConfig* KC, struct DataSet* ref, struct DataSet* target);
-
-int AllocateKernelOuptputArray(struct KernelConfig* KC, struct DataSet* ref, struct DataSet* target);
-int WeightingKernelOuptputAB(struct KernelConfig* KC, struct DataSet* target);
-
-int ComputeWDKernelNormalizeCoefficient(struct KernelConfig* KC, struct DataSet* target);
-
-double compute_distance_string_kernel(string* a, string* b);
-double compute_weighted_degree_string_kernel(int* k, double* weighting_coef, string* a, string* b);
-
-double compute_radial_basis_function(double gamma, double value);
-
-#endif //StringKernels_h
+#endif
