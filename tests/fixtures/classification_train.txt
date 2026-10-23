@@ -1,0 +1,4 @@
+AAAA 1
+AAAT 1
+CCCC -1
+CCCT -1

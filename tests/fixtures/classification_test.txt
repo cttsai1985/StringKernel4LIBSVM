@@ -1,0 +1,6 @@
+AAAA 1
+CCCC -1
+AAAG 1
+CCCG -1
+AAA 1
+CCC -1
