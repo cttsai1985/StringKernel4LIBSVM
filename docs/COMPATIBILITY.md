@@ -66,7 +66,7 @@ standard exceptions and reports them through stderr and its exit status.
 
 ## Historical analyzer
 
-`svmsk_analyser.cpp` remains byte-for-byte historical source and is outside all
+`legacy/paired_sequence_analyzer.cpp` remains byte-for-byte historical source and is outside all
 supported build targets. It depends on the missing `OrthogonalArray.h`, a paired
 sequence data model absent from the supplied header, incompatible constructors,
 and private fields from a customized LIBSVM integration.

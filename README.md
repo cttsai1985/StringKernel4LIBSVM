@@ -10,20 +10,27 @@ requires alignment. See [kernel definitions](docs/KERNELS.md).
 
 ## Build and run the supplied regression example
 
-Use a C++17 compiler and CMake 3.25 or newer. This production build uses vendored
-LIBSVM sources and needs neither Python nor dependency downloads.
+Use a C++17 compiler, CMake 3.25 or newer, and Python 3.9 or newer for the
+initial dependency bootstrap. The script downloads the six required official
+LIBSVM files at an exact commit and verifies their SHA-256 digests. After that
+step, production configuration and builds need neither Python nor network access.
 
 On Linux or macOS, run these commands from the repository directory:
 
 ```sh
+python3 scripts/fetch_libsvm.py
 cmake -S . -B build/release -DBUILD_TESTING=OFF -DCMAKE_BUILD_TYPE=Release
 cmake --build build/release --config Release
 mkdir -p build/example
-./build/release/StringKernelConverter -train data.txt -k 5 > build/example/train.kernel
-./build/release/StringKernelConverter -train data.txt -test test_data.txt -k 5 > build/example/test.kernel
+./build/release/StringKernelConverter -train examples/regression/train_sequences.tsv -k 5 > build/example/train.kernel
+./build/release/StringKernelConverter -train examples/regression/train_sequences.tsv -test examples/regression/test_sequences.tsv -k 5 > build/example/test.kernel
 ./build/release/svm-train -s 3 -t 4 build/example/train.kernel build/example/model
 ./build/release/svm-predict build/example/test.kernel build/example/model build/example/predictions.txt
 ```
+
+Dependency sources are cached under ignored `third_party/libsvm/`; rerunning the
+bootstrap verifies and reuses a complete cache offline. See [offline setup and
+recovery](docs/DEVELOPMENT.md#bootstrap-libsvm-and-work-offline).
 
 The last command writes one prediction per test record to
 `build/example/predictions.txt`. The supplied labels are continuous, so the example
@@ -33,6 +40,7 @@ On Windows, open a Visual Studio developer command prompt with a C++17 toolchain
 For Visual Studio 2026, use CMake 4.2 or newer.
 
 ```bat
+python scripts/fetch_libsvm.py
 cmake -S . -B build/release -DBUILD_TESTING=OFF
 cmake --build build/release --config Release
 sample.bat build\release\Release
@@ -77,7 +85,7 @@ the library API, see [development instructions](docs/DEVELOPMENT.md) and
 
 The modernized C++ API and stricter input rules are intentional changes. See
 [compatibility](docs/COMPATIBILITY.md), [design](docs/DESIGN.md), and
-[validation evidence](docs/VALIDATION.md). The incomplete `svmsk_analyser.cpp`
+[validation evidence](docs/VALIDATION.md). The incomplete `legacy/paired_sequence_analyzer.cpp`
 remains unsupported historical source and is excluded from the build.
 
 LIBSVM's license and exact source pin are in

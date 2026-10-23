@@ -118,3 +118,39 @@ standard-stream parsing differences without relaxing the expected values.
 Additional process checks cover subnormal/maximal finite labels and malformed
 hexadecimal/double-sign inputs. MEASURED corrected local development suite:
 39/39 CTest checks passed. The hosted matrix remains the cross-platform gate.
+
+
+## Dependency bootstrap and layout cleanup (#3)
+
+Tracking issue: [#3](https://github.com/cttsai1985/StringKernel4LIBSVM/issues/3).
+The modernization evidence above records historical paths and remains unchanged.
+Current examples are `examples/regression/train_sequences.tsv` and
+`examples/regression/test_sequences.tsv`; historical source is
+`legacy/paired_sequence_analyzer.cpp`. The active internal option parser is
+`CliOptions.h/.cpp`. Independent tests pin the original bytes of both examples
+and the historical analyzer. No kernel or solver mathematics changed.
+
+RED: `python3 tests/test_fetch_libsvm.py -v` failed before implementation because
+`scripts/fetch_libsvm.py` did not exist. An additional external-response test
+raised `http.client.IncompleteRead` through the initial implementation; it passed
+after interrupted HTTP responses became actionable bootstrap errors.
+
+MEASURED bootstrap tests: all 19 standard-library tests passed, covering real
+byte digests, temporary files, exact upstream pins, complete offline reuse,
+partial cache recovery, modified cache rejection, bad hashes, interrupted/network
+failures, manifest validation, and CLI diagnostics. HTTP is mocked only at its
+external boundary; unit tests make no network requests.
+
+MEASURED CMake preflight tests accept the verified cache and reject missing or
+modified sources with the setup command. Production configure/build succeeded
+with `BUILD_TESTING=OFF`, Python discovery disabled, and FetchContent disconnected.
+Production configuration invokes no dependency fetcher. The formatting check
+passed using clang-format 19.1.7.
+
+MEASURED full local verification: development, ASan/UBSan, and GCC coverage each
+passed all 40 CTest checks, including the 19-case bootstrap driver, independent
+matrix and prediction oracles, actual trainer/predictor workflows, installation,
+and dependency/layout pins. Project-only coverage was 260/262 lines (99.2%),
+28/28 functions (100%), and 382/508 branches (75.2%); the 98% line gate passed.
+The local Catch2 source override and temporary-directory environment remain as
+documented above.

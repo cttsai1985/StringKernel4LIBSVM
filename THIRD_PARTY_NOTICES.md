@@ -9,10 +9,11 @@ The build includes unmodified source from
 Copyright (c) 2000-2023 Chih-Chung Chang and Chih-Jen Lin. All rights reserved.
 
 The full redistribution conditions and disclaimer are in
-[`third_party/libsvm/COPYRIGHT`](third_party/libsvm/COPYRIGHT). This file remains
-part of the source distribution and is installed with this notice. The vendored
-files and their source URLs and SHA-256 digests are recorded in
-[`third_party/libsvm/UPSTREAM.json`](third_party/libsvm/UPSTREAM.json).
+[the pinned upstream COPYRIGHT](https://github.com/cjlin1/libsvm/blob/6b907139084abf2da4d6d3cb10dc3b7eaffa2fbb/COPYRIGHT).
+The dependency bootstrap fetches that complete file into ignored
+`third_party/libsvm/COPYRIGHT`; installation copies it beside this notice.
+The exact files, source URLs, and SHA-256 digests are recorded in
+[`cmake/libsvm.json`](cmake/libsvm.json).
 In an installation, the complete `COPYRIGHT` file is beside this notice.
 
 ## Catch2

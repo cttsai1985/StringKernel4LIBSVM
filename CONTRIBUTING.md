@@ -27,14 +27,16 @@ establish biological prediction quality.
 
 ## Keep dependencies reproducible
 
-Keep `third_party/libsvm` identical to its recorded upstream commit. To update
-LIBSVM, review the upstream change, replace the complete pinned source set, and
-update `UPSTREAM.json` and the independent expectations in
-`tests/test_dependency_pins.py`. Retain the upstream copyright notice.
+Keep the downloaded `third_party/libsvm` cache ignored and identical to its
+recorded upstream commit. To update LIBSVM, review the upstream change and update
+`cmake/libsvm.json`, the independent expectations in `tests/test_dependency_pins.py`,
+and notices together. Remove the old cache and run `python3 scripts/fetch_libsvm.py`.
+Retain the fetched upstream copyright notice in every installation.
 
 Catch2 is a test-only dependency. Update its version, archive digest, independent
 pin test, and documentation together. Preserve production configuration with
-`BUILD_TESTING=OFF` so it needs neither Python nor network access.
+`BUILD_TESTING=OFF` so production configuration and build need neither Python nor network access
+after the explicit bootstrap step.
 
 ## Finish the change
 

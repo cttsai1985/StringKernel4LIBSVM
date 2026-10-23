@@ -1,1 +1,2 @@
-third_party/libsvm/* -text
+examples/regression/*.tsv -text
+legacy/paired_sequence_analyzer.cpp -text
