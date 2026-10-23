@@ -167,6 +167,19 @@ silently assign a license to the historical project.
 
 ## Tests and delivery gates
 
+The owner requested pstack and PUA as workflow guidance. Apply pstack's
+[Test Behavior, Not Implementation](https://github.com/cursor/plugins/blob/main/pstack/skills/principle-test-behavior-not-implementation/SKILL.md)
+by testing independent mathematical expectations and the public CLI.
+Apply [Prove It Works](https://github.com/cursor/plugins/blob/main/pstack/skills/principle-prove-it-works/SKILL.md)
+by running real solver and installed-artifact workflows, and its
+[shipping verification](https://github.com/cursor/plugins/blob/main/pstack/skills/poteto-mode/playbooks/shipping.md)
+by obtaining an independent verdict on the current patch before merging. Use
+available Codex collaborators and CLI tools for these checks; no Cursor cloud
+agent or unavailable harness-specific tool is assumed. PUA supplies persistence,
+root-cause investigation, alternate approaches after repeated failures, and
+evidence-backed issue closeout. Structural refactoring and intentional behavior
+corrections remain distinguished in the compatibility notes and test evidence.
+
 Numerical tests build a separate feature map keyed by `(position, order, token)`
 and compare weighted dot products to production results. Include hand calculations,
 bounded exhaustive small alphabets, positional shifts, repeated symbols, degree
