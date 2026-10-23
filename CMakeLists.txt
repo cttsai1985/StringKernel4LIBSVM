@@ -42,11 +42,11 @@ target_include_directories(stringkernel PUBLIC
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/StringKernel4LIBSVM>)
 stringkernel_project_target(stringkernel)
 
-add_library(stringkernel_options STATIC GetLongOpt.cpp)
+add_library(stringkernel_options STATIC CliOptions.cpp)
 target_link_libraries(stringkernel_options PUBLIC stringkernel)
 stringkernel_project_target(stringkernel_options)
 
-set(libsvm_dir "${PROJECT_SOURCE_DIR}/third_party/libsvm")
+include(cmake/Libsvm.cmake)
 add_library(libsvm STATIC "${libsvm_dir}/svm.cpp")
 target_include_directories(libsvm PUBLIC "${libsvm_dir}")
 set_target_properties(libsvm PROPERTIES CXX_EXTENSIONS OFF)

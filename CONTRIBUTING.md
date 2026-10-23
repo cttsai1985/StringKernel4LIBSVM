@@ -27,20 +27,24 @@ establish biological prediction quality.
 
 ## Keep dependencies reproducible
 
-Keep `third_party/libsvm` identical to its recorded upstream commit. To update
-LIBSVM, review the upstream change, replace the complete pinned source set, and
-update `UPSTREAM.json` and the independent expectations in
-`tests/test_dependency_pins.py`. Retain the upstream copyright notice.
+Keep the downloaded `third_party/libsvm` cache ignored and identical to its
+recorded upstream commit. To update LIBSVM, review the upstream change and update
+`cmake/libsvm.json`, the independent expectations in `tests/test_dependency_pins.py`,
+and notices together. Remove the old cache and run `python3 scripts/fetch_libsvm.py`.
+Retain the fetched upstream copyright notice in every installation.
 
 Catch2 is a test-only dependency. Update its version, archive digest, independent
 pin test, and documentation together. Preserve production configuration with
-`BUILD_TESTING=OFF` so it needs neither Python nor network access.
+`BUILD_TESTING=OFF` so production configuration and build need neither Python nor network access
+after the explicit bootstrap step.
 
 ## Finish the change
 
-The PR must pass CI on its current commit before merge to `master`. Close the
-tracking issue with evidence after merge, then remove the implementation
-worktree. Keep a regression gate that fails if the fixed behavior returns.
+Branch from `origin/dev` and target feature PRs to `dev`. Preserve ordered
+commits when merging; promote verified `dev` changes to `master` through a PR.
+Every PR must pass CI and independent review on its current commit. Close the
+tracking issue with evidence after master promotion, then remove the
+implementation worktree. Keep a regression gate that fails if the fixed behavior returns.
 Do not rewrite an operator's working tree with `git reset --hard` or `git stash`.
 
 The owner has not selected a project license. Do not add or imply a new license

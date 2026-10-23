@@ -36,3 +36,7 @@
 /coverage/
 __pycache__/
 *.pyc
+
+# Verified dependency bootstrap output
+/third_party/libsvm/
+/third_party/.libsvm-fetch-*/

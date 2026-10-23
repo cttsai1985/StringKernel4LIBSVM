@@ -1,5 +1,5 @@
+#include "CliOptions.h"
 #include "Dataset.h"
-#include "GetLongOpt.h"
 #include "LibsvmWriter.h"
 #include "svm.h"
 

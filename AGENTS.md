@@ -10,12 +10,14 @@
   `docs/KERNELS.md`. Add pin tests for production defaults and dependency changes.
 - Use values, standard containers, and explicit configuration. Library code
   reads no clock. Pass any future timestamps as arguments.
-- Keep vendored LIBSVM files immutable against their upstream pin. Update source,
-  provenance, independent digest tests, and notices together when upgrading.
-- Keep test dependencies behind `BUILD_TESTING`. Production builds must work
-  without Python or network access.
-- Keep `svmsk_analyser.cpp` unchanged and excluded from supported targets unless
-  a separate design restores its missing dependencies and public API integration.
+- Keep downloaded LIBSVM files out of Git. Bootstrap with
+  `python3 scripts/fetch_libsvm.py`; update `cmake/libsvm.json`, independent digest
+  tests, and notices together when upgrading. CMake must verify cached bytes.
+- Keep test dependencies behind `BUILD_TESTING`. After bootstrap, production
+  builds must work without Python or network access.
+- Keep `legacy/paired_sequence_analyzer.cpp` unchanged and excluded from
+  supported targets unless a separate design restores its missing dependencies
+  and public API integration.
 - Run the applicable commands in `docs/DEVELOPMENT.md`. Verify real matrices and
   predictions before claiming success. Label measurements `MEASURED` and estimates
   `ESTIMATED`. Do not infer numerical correctness from compilation alone.
