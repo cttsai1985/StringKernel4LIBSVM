@@ -5,6 +5,10 @@ on:
     branches: [master]
   pull_request:
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
 
@@ -20,18 +24,21 @@ jobs:
         os: [ubuntu-latest, macos-latest, windows-latest]
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-python@v7.1.0
         with:
           python-version: '3.12'
       - name: Install build tool
-        run: python -m pip install cmake==3.31.6
+        run: python -m pip install cmake==4.4.4
       - name: Configure
         run: cmake --preset dev
       - name: Build
         run: cmake --build --preset dev
       - name: Test numerical, CLI, dependency, and installation contracts
         run: ctest --preset dev
+      - name: Run the documented Windows batch workflow
+        if: runner.os == 'Windows'
+        run: ./sample.bat build\dev\Debug
       - name: Configure production without Python or dependency fetching
         run: >-
           cmake -S . -B build/production -DBUILD_TESTING=OFF
@@ -47,11 +54,11 @@ jobs:
       ASAN_OPTIONS: detect_leaks=1
       UBSAN_OPTIONS: print_stacktrace=1:halt_on_error=1
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-python@v7.1.0
         with:
           python-version: '3.12'
-      - run: python -m pip install cmake==3.31.6
+      - run: python -m pip install cmake==4.4.4
       - run: cmake --preset sanitizers
       - run: cmake --build --preset sanitizers
       - run: ctest --preset sanitizers
@@ -60,8 +67,8 @@ jobs:
     name: Project C++ formatting
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-python@v7.1.0
         with:
           python-version: '3.12'
       - run: python -m pip install clang-format==19.1.7
@@ -82,19 +89,19 @@ jobs:
     name: Project coverage
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-python@v7.1.0
         with:
           python-version: '3.12'
-      - run: python -m pip install cmake==3.31.6 gcovr==8.3
+      - run: python -m pip install cmake==4.4.4 gcovr==8.3
       - run: cmake --preset coverage
       - run: cmake --build --preset coverage
       - run: ctest --preset coverage
       - name: Enforce coverage for project implementation
         run: |
           python -c "from pathlib import Path; Path('coverage').mkdir(exist_ok=True)"
-          gcovr --root . --filter '(StringKernels|Dataset|LibsvmWriter|GetLongOpt|StringKernelConverter)\.cpp$' --print-summary --fail-under-line 85 --html-details coverage/index.html --xml coverage/coverage.xml
-      - uses: actions/upload-artifact@v4
+          gcovr --root . --filter '(StringKernels|Dataset|LibsvmWriter|GetLongOpt|StringKernelConverter)\.cpp$' --print-summary --fail-under-line 98 --html-details coverage/index.html --xml coverage/coverage.xml
+      - uses: actions/upload-artifact@v7.0.2
         if: always()
         with:
           name: project-coverage

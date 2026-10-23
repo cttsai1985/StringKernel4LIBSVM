@@ -13,6 +13,7 @@ The full redistribution conditions and disclaimer are in
 part of the source distribution and is installed with this notice. The vendored
 files and their source URLs and SHA-256 digests are recorded in
 [`third_party/libsvm/UPSTREAM.json`](third_party/libsvm/UPSTREAM.json).
+In an installation, the complete `COPYRIGHT` file is beside this notice.
 
 ## Catch2
 

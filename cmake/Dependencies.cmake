@@ -10,3 +10,6 @@ FetchContent_Declare(catch2
   URL_HASH SHA256=d16bd1b8b2364918bd472cb216394acb93bde6784890df0d91bccfb3f28d777d
   DOWNLOAD_EXTRACT_TIMESTAMP FALSE)
 FetchContent_MakeAvailable(catch2)
+# Catch2's compiled feature support must match the C++17 test headers on every
+# compiler, including AppleClang whose default standard can be older.
+target_compile_features(Catch2 PUBLIC cxx_std_17)

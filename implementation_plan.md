@@ -238,6 +238,7 @@ Create project/build/documentation files:
 ```text
 implementation_plan.md
 AGENTS.md
+.gitattributes
 .clang-format
 CMakeLists.txt
 CMakePresets.json

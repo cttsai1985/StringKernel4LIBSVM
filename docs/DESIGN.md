@@ -154,6 +154,8 @@ Vendor LIBSVM tag `v337`, exact commit
 COPYRIGHT unchanged. `UPSTREAM.json` records the version, commit, source URLs,
 and SHA-256 for every vendored file. Tests independently pin the expected commit
 and hashes, so editing the source and its local manifest together is detected.
+Disable Git newline conversion for vendored files so these byte checks remain
+valid even when a contributor's Windows configuration enables automatic CRLF.
 
 Catch2 `v3.16.1` is test-only and fetched by archive digest. An offline source
 override is documented. Python standard-library test drivers, Python discovery,
