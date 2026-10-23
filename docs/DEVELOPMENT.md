@@ -3,8 +3,9 @@
 ## Build and run tests
 
 Use a C++17 compiler, CMake 3.25 or newer, and Python 3.9 or newer. The first test
-configuration downloads the pinned Catch2 v3.16.1 archive. Production builds with
-`BUILD_TESTING=OFF` need neither Python nor downloads.
+configuration downloads the pinned Catch2 v3.16.1 archive. After the explicit
+LIBSVM bootstrap, production builds with `BUILD_TESTING=OFF` need neither Python
+nor downloads.
 
 For Visual Studio 2026, use CMake 4.2 or newer. The CMake 3.25 minimum supports
 older toolchains, including Visual Studio 2022.
@@ -12,12 +13,14 @@ older toolchains, including Visual Studio 2022.
 Run from the repository directory:
 
 ```sh
+python3 scripts/fetch_libsvm.py
 cmake --preset dev
 cmake --build --preset dev
 ctest --preset dev
 ```
 
-These commands also work in a Windows developer command prompt. The presets use
+In a Windows developer command prompt, use `python scripts/fetch_libsvm.py`
+for the bootstrap command. The CMake and CTest commands are the same. Presets use
 the generator selected by CMake and provide `Debug` to builds and tests for
 generators with multiple configurations. Set `CMAKE_GENERATOR` before the initial
 configuration if you need a particular generator.
@@ -25,6 +28,25 @@ configuration if you need a particular generator.
 For a focused regression, list tests with `ctest --preset dev -N`, then run
 `ctest --preset dev -R PATTERN`. See [contribution requirements](../CONTRIBUTING.md)
 for the expected test-first sequence.
+
+## Bootstrap LIBSVM and work offline
+
+Run `python3 scripts/fetch_libsvm.py` (Windows: `python scripts/fetch_libsvm.py`)
+from the repository root. It downloads only the six files in `cmake/libsvm.json`
+from the pinned official commit, verifies SHA-256, and stores them in ignored
+`third_party/libsvm`. A repeated invocation verifies a complete cache without
+network access. An incomplete cache downloads only missing files, publishing
+new files only after every required file has passed verification. A bad download
+or network failure returns a nonzero status; rerun after resolving connectivity.
+For modified cache files, remove the named file and rerun the bootstrap.
+
+For an offline machine, run the bootstrap on a connected machine and transfer the
+complete `third_party/libsvm` directory with this checkout. Run the bootstrap again
+offline to verify all bytes. CMake also verifies them on every configuration and
+prints the setup command for missing or modified files. `--source-dir PATH` lets
+you prepare a cache elsewhere; copy that verified directory into
+`third_party/libsvm` before configuring. Python is a bootstrap and testing tool;
+production configuration, compilation, and installation do not use it.
 
 ## Run tests offline
 
@@ -39,7 +61,7 @@ ctest --preset dev
 
 The source override bypasses CMake's archive download and digest verification.
 Verify the local sources yourself against the pinned archive in
-`cmake/Dependencies.cmake`. LIBSVM is already vendored in the repository.
+`cmake/Dependencies.cmake`. Prepare the LIBSVM cache as described above.
 
 ## Check sanitizers
 
@@ -52,7 +74,7 @@ ctest --preset sanitizers
 ```
 
 This configuration instruments project code and its C++ tests with AddressSanitizer
-and UndefinedBehaviorSanitizer. It does not alter vendored LIBSVM. Windows and
+and UndefinedBehaviorSanitizer. It does not alter downloaded LIBSVM. Windows and
 unsupported compilers reject the sanitizer option.
 
 ## Check coverage
@@ -65,10 +87,10 @@ cmake --preset coverage
 cmake --build --preset coverage
 ctest --preset coverage
 python3 -c "from pathlib import Path; Path('coverage').mkdir(exist_ok=True)"
-gcovr --root . --filter '(StringKernels|Dataset|LibsvmWriter|GetLongOpt|StringKernelConverter)\.cpp$' --print-summary --fail-under-line 98 --html-details coverage/index.html --xml coverage/coverage.xml
+gcovr --root . --filter '(StringKernels|Dataset|LibsvmWriter|CliOptions|StringKernelConverter)\.cpp$' --print-summary --fail-under-line 98 --html-details coverage/index.html --xml coverage/coverage.xml
 ```
 
-The filter includes project implementation and excludes tests and vendored code.
+The filter includes project implementation and excludes tests and upstream code.
 The line-coverage floor is a regression gate. Consult
 [validation evidence](VALIDATION.md) for the measured baseline. Coverage requires
 GCC, and the build rejects combined coverage and sanitizer instrumentation.
@@ -79,15 +101,16 @@ Use the pinned formatter version from CI:
 
 ```sh
 python3 -m pip install clang-format==19.1.7
-clang-format --dry-run --Werror Dataset.h Dataset.cpp GetLongOpt.h GetLongOpt.cpp StringKernels.h StringKernels.cpp LibsvmWriter.h LibsvmWriter.cpp StringKernelConverter.cpp tests/test_dataset.cpp tests/test_options.cpp tests/test_kernels.cpp tests/test_writer.cpp
+clang-format --dry-run --Werror Dataset.h Dataset.cpp CliOptions.h CliOptions.cpp StringKernels.h StringKernels.cpp LibsvmWriter.h LibsvmWriter.cpp StringKernelConverter.cpp tests/test_dataset.cpp tests/test_options.cpp tests/test_kernels.cpp tests/test_writer.cpp
 ```
 
-To apply formatting, replace `--dry-run --Werror` with `-i`. Keep vendored LIBSVM
+To apply formatting, replace `--dry-run --Werror` with `-i`. Keep downloaded LIBSVM
 and the historical analyzer unchanged.
 
 ## Build and install without test dependencies
 
 ```sh
+python3 scripts/fetch_libsvm.py
 cmake -S . -B build/release -DBUILD_TESTING=OFF -DCMAKE_BUILD_TYPE=Release
 cmake --build build/release --config Release
 cmake --install build/release --config Release --prefix "$PWD/build/install"

@@ -145,22 +145,30 @@ if reference count exceeds the integer-index limit supported by LIBSVM.
 Require CMake `3.25` or newer. Presets use a platform-native generator and explicit
 build/test configuration, supporting both single- and multiple-configuration
 generators. Keep project warning settings and sanitizer/coverage instrumentation
-away from vendored-source warning policy. Build upstream CLI `.c` files as C++,
+away from upstream-source warning policy. Build upstream CLI `.c` files as C++,
 matching the official Makefile. Offer sanitizer and coverage configurations only
 on supported compiler/platform combinations and fail clearly on invalid requests.
 
-Vendor LIBSVM tag `v337`, exact commit
+Fetch LIBSVM tag `v337`, exact commit
 `6b907139084abf2da4d6d3cb10dc3b7eaffa2fbb`, with upstream sources, README, and
-COPYRIGHT unchanged. `UPSTREAM.json` records the version, commit, source URLs,
-and SHA-256 for every vendored file. Tests independently pin the expected commit
-and hashes, so editing the source and its local manifest together is detected.
-Disable Git newline conversion for vendored files so these byte checks remain
-valid even when a contributor's Windows configuration enables automatic CRLF.
+COPYRIGHT unchanged. `cmake/libsvm.json` records the version, commit, official
+source URLs, and SHA-256 for every required file. The standard-library
+`scripts/fetch_libsvm.py` bootstraps ignored `third_party/libsvm`, verifies cached
+bytes before offline reuse, and stages missing downloads until the entire cohort
+is verified. Modified cached bytes and bad downloads fail with actionable errors.
+No downloaded upstream source is committed and no solver fork is maintained.
+
+CMake independently hashes every required cached file on configuration. Missing
+or modified sources fail with the bootstrap command; CMake never runs Python or
+uses the network to prepare LIBSVM. Tests independently pin the expected commit
+and hashes, so editing source and manifest together is detected. Python 3.9+ is
+required for bootstrap and tests, while production builds after bootstrap are
+independent of Python and network access.
 
 Catch2 `v3.16.1` is test-only and fetched by archive digest. An offline source
 override is documented. Python standard-library test drivers, Python discovery,
-and Catch2 setup are all gated behind `BUILD_TESTING`. Production configuration
-with `-DBUILD_TESTING=OFF` needs neither Python nor network access.
+and Catch2 setup are all gated behind `BUILD_TESTING`. After bootstrap, production
+configuration with `-DBUILD_TESTING=OFF` needs neither Python nor network access.
 
 Install the converter, official trainer/predictor, project library/public headers,
 and upstream notices. An integration test installs into a temporary prefix and
@@ -212,7 +220,7 @@ merge; close the issue with evidence and remove the implementation worktree.
 
 ## Historical analyzer and future work
 
-Keep `svmsk_analyser.cpp` byte-for-byte unchanged and outside supported targets.
+Keep `legacy/paired_sequence_analyzer.cpp` byte-for-byte unchanged and outside supported targets.
 Restoration needs a paired-sequence data contract, orthogonal-array dependency
 provenance, fixed-fold ownership, and a new public-API-only solver integration.
 It is not made buildable by merely supplying upstream `svm.h`.

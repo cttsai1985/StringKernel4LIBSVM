@@ -30,6 +30,25 @@ jobs:
           python-version: '3.12'
       - name: Install build tool
         run: python -m pip install cmake==4.4.4
+      - name: Check clean checkout requires explicit bootstrap
+        shell: bash
+        run: |
+          python - <<'PYTHON'
+          import subprocess
+          tracked = subprocess.check_output(['git', 'ls-files', 'third_party/libsvm'], text=True)
+          assert not tracked, tracked
+          for path in ('third_party/libsvm/svm.cpp',
+                       'third_party/.libsvm-fetch-interrupted/svm.cpp'):
+              subprocess.run(['git', 'check-ignore', '--no-index', path], check=True)
+          result = subprocess.run(
+              ['cmake', '-S', '.', '-B', 'build/missing-dependency', '-DBUILD_TESTING=OFF'],
+              capture_output=True, text=True, check=False,
+          )
+          assert result.returncode != 0, result.stdout
+          assert 'scripts/fetch_libsvm.py' in result.stderr, result.stderr
+          PYTHON
+      - name: Fetch and verify pinned LIBSVM sources
+        run: python scripts/fetch_libsvm.py
       - name: Configure
         run: cmake --preset dev
       - name: Build
@@ -59,6 +78,7 @@ jobs:
         with:
           python-version: '3.12'
       - run: python -m pip install cmake==4.4.4
+      - run: python scripts/fetch_libsvm.py
       - run: cmake --preset sanitizers
       - run: cmake --build --preset sanitizers
       - run: ctest --preset sanitizers
@@ -80,7 +100,6 @@ jobs:
           files = sorted(
               path for pattern in ('*.h', '*.cpp', 'tests/*.cpp')
               for path in Path('.').glob(pattern)
-              if path.name != 'svmsk_analyser.cpp'
           )
           subprocess.run(['clang-format', '--dry-run', '--Werror', *map(str, files)], check=True)
           PY
@@ -94,13 +113,14 @@ jobs:
         with:
           python-version: '3.12'
       - run: python -m pip install cmake==4.4.4 gcovr==8.3
+      - run: python scripts/fetch_libsvm.py
       - run: cmake --preset coverage
       - run: cmake --build --preset coverage
       - run: ctest --preset coverage
       - name: Enforce coverage for project implementation
         run: |
           python -c "from pathlib import Path; Path('coverage').mkdir(exist_ok=True)"
-          gcovr --root . --filter '(StringKernels|Dataset|LibsvmWriter|GetLongOpt|StringKernelConverter)\.cpp$' --print-summary --fail-under-line 98 --html-details coverage/index.html --xml coverage/coverage.xml
+          gcovr --root . --filter '(StringKernels|Dataset|LibsvmWriter|CliOptions|StringKernelConverter)\.cpp$' --print-summary --fail-under-line 98 --html-details coverage/index.html --xml coverage/coverage.xml
       - uses: actions/upload-artifact@v7.0.2
         if: always()
         with:

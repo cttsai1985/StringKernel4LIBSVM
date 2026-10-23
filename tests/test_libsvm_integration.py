@@ -106,8 +106,8 @@ class LibsvmIntegrationTests(unittest.TestCase):
         path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
     def test_supplied_regression_workflow_matches_independent_oracle_predictions(self) -> None:
-        reference = self.options.source / "data.txt"
-        target = self.options.source / "test_data.txt"
+        reference = self.options.source / "examples" / "regression" / "train_sequences.tsv"
+        target = self.options.source / "examples" / "regression" / "test_sequences.tsv"
         generated_train = self.directory / "regression.train"
         generated_test = self.directory / "regression.test"
         oracle_train = self.directory / "oracle.train"
@@ -160,12 +160,14 @@ class LibsvmIntegrationTests(unittest.TestCase):
         test_matrix = self.directory / "installed.test"
         model = self.directory / "installed.model"
         output = self.directory / "installed.predictions"
-        self.convert(self.options.source / "data.txt", None, train_matrix, converter)
-        self.convert(self.options.source / "data.txt", self.options.source / "test_data.txt",
-                     test_matrix, converter)
+        example = self.options.source / "examples" / "regression"
+        reference = example / "train_sequences.tsv"
+        target = example / "test_sequences.tsv"
+        self.convert(reference, None, train_matrix, converter)
+        self.convert(reference, target, test_matrix, converter)
         self.run_program(trainer, "-q", "-s", "3", "-t", "4", train_matrix, model)
         self.run_program(predictor, test_matrix, model, output)
-        self.assertEqual(len(self.predictions(output)), len(records(self.options.source / "test_data.txt")))
+        self.assertEqual(len(self.predictions(output)), len(records(target)))
 
 
 if __name__ == "__main__":

@@ -12,9 +12,9 @@ if not exist "%BIN%\StringKernelConverter.exe" (
 if not exist "build\example" mkdir "build\example"
 if not exist "build\example" goto :fail
 
-"%BIN%\StringKernelConverter.exe" -train data.txt -k 5 > "build\example\train.kernel"
+"%BIN%\StringKernelConverter.exe" -train examples\regression\train_sequences.tsv -k 5 > "build\example\train.kernel"
 if errorlevel 1 goto :fail
-"%BIN%\StringKernelConverter.exe" -train data.txt -test test_data.txt -k 5 > "build\example\test.kernel"
+"%BIN%\StringKernelConverter.exe" -train examples\regression\train_sequences.tsv -test examples\regression\test_sequences.tsv -k 5 > "build\example\test.kernel"
 if errorlevel 1 goto :fail
 "%BIN%\svm-train.exe" -s 3 -t 4 "build\example\train.kernel" "build\example\model"
 if errorlevel 1 goto :fail
