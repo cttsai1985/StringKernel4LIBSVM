@@ -37,10 +37,9 @@ jobs:
           import subprocess
           tracked = subprocess.check_output(['git', 'ls-files', 'third_party/libsvm'], text=True)
           assert not tracked, tracked
-          subprocess.run(
-              ['git', 'check-ignore', '--no-index', 'third_party/libsvm/svm.cpp',
-               'third_party/.libsvm-fetch-interrupted/svm.cpp'], check=True,
-          )
+          for path in ('third_party/libsvm/svm.cpp',
+                       'third_party/.libsvm-fetch-interrupted/svm.cpp'):
+              subprocess.run(['git', 'check-ignore', '--no-index', path], check=True)
           result = subprocess.run(
               ['cmake', '-S', '.', '-B', 'build/missing-dependency', '-DBUILD_TESTING=OFF'],
               capture_output=True, text=True, check=False,
