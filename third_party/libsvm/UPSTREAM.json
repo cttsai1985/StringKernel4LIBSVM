@@ -1,0 +1,33 @@
+{
+  "name": "LIBSVM",
+  "version": "3.37",
+  "tag": "v337",
+  "commit": "6b907139084abf2da4d6d3cb10dc3b7eaffa2fbb",
+  "repository": "https://github.com/cjlin1/libsvm",
+  "files": {
+    "svm.cpp": {
+      "url": "https://raw.githubusercontent.com/cjlin1/libsvm/6b907139084abf2da4d6d3cb10dc3b7eaffa2fbb/svm.cpp",
+      "sha256": "bfe02a7c001151ab703c206ff6a9136c75eb704b4427536e3f65d3ac90bd0eb6"
+    },
+    "svm.h": {
+      "url": "https://raw.githubusercontent.com/cjlin1/libsvm/6b907139084abf2da4d6d3cb10dc3b7eaffa2fbb/svm.h",
+      "sha256": "597aff50cfb9a04922736472bd125862439c87408a83cb57fb04980744dffd51"
+    },
+    "svm-train.c": {
+      "url": "https://raw.githubusercontent.com/cjlin1/libsvm/6b907139084abf2da4d6d3cb10dc3b7eaffa2fbb/svm-train.c",
+      "sha256": "004f0ba35101a8564fd535c13abacfc3e166f8ebddda73729f4be93526cc15bc"
+    },
+    "svm-predict.c": {
+      "url": "https://raw.githubusercontent.com/cjlin1/libsvm/6b907139084abf2da4d6d3cb10dc3b7eaffa2fbb/svm-predict.c",
+      "sha256": "01bacc60534bfb07b22ad3283e084a31e795d2835981e743eefa42d048981194"
+    },
+    "README": {
+      "url": "https://raw.githubusercontent.com/cjlin1/libsvm/6b907139084abf2da4d6d3cb10dc3b7eaffa2fbb/README",
+      "sha256": "6322d5062bedcb8148d5320588909325568fe72247df2d23c8c6be8b6d8c0743"
+    },
+    "COPYRIGHT": {
+      "url": "https://raw.githubusercontent.com/cjlin1/libsvm/6b907139084abf2da4d6d3cb10dc3b7eaffa2fbb/COPYRIGHT",
+      "sha256": "958fd47be5e5b94dabeb68b077fbe2adbbd49c015fe2e453fe11afeb4a73c7e5"
+    }
+  }
+}

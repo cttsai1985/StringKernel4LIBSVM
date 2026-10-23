@@ -30,3 +30,9 @@
 *.exe
 *.out
 *.app
+
+# Local build, test, and coverage output
+/build/
+/coverage/
+__pycache__/
+*.pyc
