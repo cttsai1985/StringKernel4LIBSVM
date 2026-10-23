@@ -112,14 +112,15 @@ TEST_CASE("writer supports unequal WDSK lengths and equal-length DSK") {
     write_precomputed(wd, reference, reference);
     CHECK(values(wd.str())[0][3] == Catch::Approx(values(wd.str())[1][2]));
     std::ostringstream dsk;
-    write_precomputed(dsk, Dataset{{"AB", 1}}, Dataset{{"AC", 2}},
-                      {KernelType::distance, 5});
+    write_precomputed(dsk, Dataset{{"AB", 1}}, Dataset{{"AC", 2}}, {KernelType::distance, 5});
     CHECK(values(dsk.str())[0][2] == Catch::Approx(0.5));
 }
 
 TEST_CASE("invalid datasets are rejected before any output") {
     const Dataset good{{"AA", 1}};
-    const std::vector<Dataset> invalid{{}, {{"", 1}}, {{"A A", 1}},
+    const std::vector<Dataset> invalid{{},
+                                       {{"", 1}},
+                                       {{"A A", 1}},
                                        {{"AA", std::numeric_limits<double>::infinity()}},
                                        {{"AA", std::numeric_limits<double>::quiet_NaN()}}};
     for (const auto& dataset : invalid) {
@@ -130,8 +131,9 @@ TEST_CASE("invalid datasets are rejected before any output") {
         CHECK(output.str().empty());
     }
     std::ostringstream output;
-    CHECK_THROWS_AS(write_precomputed(output, good, Dataset{{"AA", 1}, {"A", 2}},
-                                     {KernelType::distance, 5}), std::invalid_argument);
+    CHECK_THROWS_AS(
+        write_precomputed(output, good, Dataset{{"AA", 1}, {"A", 2}}, {KernelType::distance, 5}),
+        std::invalid_argument);
     CHECK(output.str().empty());
     CHECK_THROWS_AS(write_precomputed(output, good, good, {KernelType::weighted_degree, 0}),
                     std::invalid_argument);

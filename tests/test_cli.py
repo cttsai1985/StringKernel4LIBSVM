@@ -143,13 +143,15 @@ class ConverterTests(unittest.TestCase):
 
     @unittest.skipUnless(Path("/dev/full").exists(), "requires Linux /dev/full")
     def test_redirected_output_failure_has_nonzero_status(self) -> None:
-        with Path("/dev/full").open("w", encoding="utf-8") as output:
-            result = subprocess.run(
-                [str(self.converter), "-train", str(self.train)], stdout=output,
-                stderr=subprocess.PIPE, text=True, timeout=20, check=False,
-            )
-        self.assertNotEqual(result.returncode, 0)
-        self.assertTrue(result.stderr.strip())
+        for arguments in [["-train", str(self.train)], ["--help"], ["--version"]]:
+            with self.subTest(arguments=arguments):
+                with Path("/dev/full").open("w", encoding="utf-8") as output:
+                    result = subprocess.run(
+                        [str(self.converter), *arguments], stdout=output,
+                        stderr=subprocess.PIPE, text=True, timeout=20, check=False,
+                    )
+                self.assertNotEqual(result.returncode, 0)
+                self.assertTrue(result.stderr.strip())
 
 
 if __name__ == "__main__":
