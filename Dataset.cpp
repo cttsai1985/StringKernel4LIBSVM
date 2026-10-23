@@ -1,11 +1,13 @@
 #include "Dataset.h"
 
+#include <charconv>
 #include <cmath>
 #include <fstream>
 #include <istream>
 #include <locale>
 #include <sstream>
 #include <stdexcept>
+#include <system_error>
 #include <utility>
 
 namespace stringkernel {
@@ -36,17 +38,19 @@ bool read_line(std::istream& input, std::string& line, std::string_view source,
 }
 
 double parse_label(const std::string& token, std::string_view source, std::size_t line) {
-    std::istringstream number(token);
-    number.imbue(std::locale::classic());
-    double label = 0;
-    if (!(number >> label) || number.peek() != std::char_traits<char>::eof() ||
-        !std::isfinite(label)) {
-        throw input_error(source, line, "label must be a finite double");
+    std::string_view number(token);
+    if (!number.empty() && number.front() == '+') {
+        number.remove_prefix(1);
+        if (number.empty() || number.front() == '+' || number.front() == '-') {
+            throw input_error(source, line, "label must be a finite decimal double");
+        }
     }
-    // Standard streams can silently round an underflowing, nonzero value to zero.
-    const auto mantissa = token.substr(0, token.find_first_of("eE"));
-    if (label == 0 && mantissa.find_first_of("123456789") != std::string::npos) {
-        throw input_error(source, line, "label is outside the double range");
+    double label = 0;
+    const auto result = std::from_chars(number.data(), number.data() + number.size(), label,
+                                        std::chars_format::general);
+    if (result.ec != std::errc() || result.ptr != number.data() + number.size() ||
+        !std::isfinite(label)) {
+        throw input_error(source, line, "label must be a finite decimal double");
     }
     return label;
 }

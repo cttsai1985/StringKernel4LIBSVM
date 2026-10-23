@@ -77,7 +77,8 @@ class ConverterTests(unittest.TestCase):
                 self.assert_failure("-train", str(self.train), "-t", kernel)
 
     def test_invalid_record_is_diagnosed_before_output(self) -> None:
-        for record in ["BAD", "BAD nan", "BAD inf", "BAD 1e9999", "BAD 1 extra", "BAD 2x"]:
+        for record in ["BAD", "BAD nan", "BAD inf", "BAD 1e9999", "BAD 1 extra", "BAD 2x",
+                       "BAD 0x10", "BAD +-1", "BAD ++1"]:
             with self.subTest(record=record):
                 self.train.write_text(f"AC 1\n{record}\n", encoding="utf-8")
                 result = self.run_converter("-train", str(self.train))
@@ -135,11 +136,13 @@ class ConverterTests(unittest.TestCase):
         self.assert_failure("-train", str(self.train), "-test", str(target), "-t", "0")
 
     def test_output_preserves_regression_label_precision(self) -> None:
-        value = "0.12345678901234566"
-        self.train.write_text(f"AC {value}\n", encoding="utf-8")
-        result = self.run_converter("-train", str(self.train))
-        self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertEqual(float(result.stdout.split()[0]), float(value))
+        for value in ["0.12345678901234566", "4.9406564584124654e-324",
+                      "1.7976931348623157e308", "+1.25"]:
+            with self.subTest(value=value):
+                self.train.write_text(f"AC {value}\n", encoding="utf-8")
+                result = self.run_converter("-train", str(self.train))
+                self.assertEqual(result.returncode, 0, result.stderr)
+                self.assertEqual(float(result.stdout.split()[0]), float(value))
 
     @unittest.skipUnless(Path("/dev/full").exists(), "requires Linux /dev/full")
     def test_redirected_output_failure_has_nonzero_status(self) -> None:

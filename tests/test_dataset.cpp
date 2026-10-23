@@ -100,8 +100,9 @@ TEST_CASE("exception-enabled streams allow ordinary EOF", "[dataset]") {
 
 TEST_CASE("malformed dataset records identify the source and physical line", "[dataset]") {
     const std::vector<std::string> records = {
-        "AC",     "AC nope", "AC 1 trailing", "AC 1.2suffix", "AC 1,5", "AC nan", "AC NaN",
-        "AC inf", "AC -inf", "AC 1e999",      "AC 1e-999",    "AC --1", "AC 0x10"};
+        "AC",        "AC nope", "AC 1 trailing", "AC 1.2suffix", "AC 1,5",
+        "AC nan",    "AC NaN",  "AC inf",        "AC -inf",      "AC 1e999",
+        "AC 1e-999", "AC --1",  "AC 0x10",       "AC +-1",       "AC ++1"};
     for (const auto& record : records) {
         CAPTURE(record);
         std::istringstream input("A 1\n \t\r\n" + record + "\n");
