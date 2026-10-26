@@ -225,6 +225,14 @@ TEST_CASE("Spectrum and subsequence reject invalid parameters and nonfinite arit
     CHECK_THROWS_AS(subsequence_self(std::string(550, 'A'), 275, 1.0), std::overflow_error);
 }
 
+TEST_CASE("Tiny positive SSK decay retains nonempty gap-free diagonal features",
+          "[kernel][subsequence][numeric]") {
+    using namespace stringkernel;
+    constexpr double tiny_decay = 1e-300;
+    CHECK(subsequence_self("AA", 2, tiny_decay) == 1);
+    CHECK(kernel_value("AA", "AA", {KernelType::subsequence, 2, tiny_decay}) == 1);
+}
+
 TEST_CASE("Published degree weights and hand-calculated matches are retained",
           "[kernel][characterization]") {
     using namespace stringkernel;
