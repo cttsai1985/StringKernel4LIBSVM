@@ -3,7 +3,7 @@
 ## Supported command line
 
 ```text
-StringKernelConverter -train FILE [-test FILE] [-k DEGREE] [-t TYPE]
+StringKernelConverter -train FILE [-test FILE] [-k K] [-t TYPE | --kernel NAME] [--decay LAMBDA]
 StringKernelConverter --help
 StringKernelConverter --version
 ```
@@ -12,13 +12,15 @@ StringKernelConverter --version
 | --- | --- |
 | `-train FILE` | Required training reference dataset. |
 | `-test FILE` | Optional target dataset. Without it, targets are the training records. |
-| `-k DEGREE` | Positive integer in the platform's `int` range. Default `5`. |
-| `-t TYPE` | `0` for equal-length positional similarity, `1` for weighted degree. Default `1`. |
+| `-k K` | Positive integer in the platform's `int` range. Default `5`; means WDSK maximum order, spectrum k-mer length, or SSK subsequence length. |
+| `-t TYPE` | Stable IDs: `0` positional, `1` weighted degree (default), `2` spectrum, `3` subsequence. |
+| `--kernel NAME` | `positional`, `weighted-degree`, `spectrum`, or `subsequence`; cannot be combined with `-t`. |
+| `--decay LAMBDA` | SSK only; finite in `(0, 1]`, default `0.5`. |
 | `--help` | Standalone usage command. |
 | `--version` | Standalone project and bundled LIBSVM version command. |
 
-Unknown options, duplicate options, missing values, malformed integers, invalid
-degrees, and unsupported kernel types are errors. Successful conversion writes
+Unknown options, duplicate options, mixed kernel selectors, missing values,
+malformed parameters, invalid degrees/decay, and unsupported kernel types are errors. Successful conversion writes
 only matrix data to stdout. Diagnostics go to stderr, with a nonzero exit status.
 Paths containing spaces are supported when quoted by the calling shell.
 
@@ -42,8 +44,9 @@ historical release continuity.
 
 The old six-decimal output is not a byte compatibility target. The modernized
 output preserves finite double labels and kernel values at higher precision.
-The mathematical WDSK weights, default degree, supported flags, and training
-reference column order remain the compatibility targets.
+The mathematical WDSK weights, default WDSK type and degree, numeric IDs `0`
+and `1`, and training reference column order remain compatibility targets. New
+types are appended without renumbering these IDs.
 
 The legacy DSK calculation divided by the reference length and could produce an
 asymmetric training matrix for unequal lengths. Equal-length validation removes

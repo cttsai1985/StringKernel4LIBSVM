@@ -15,6 +15,7 @@ TEST_CASE("CLI preserves legacy defaults and filenames", "[options]") {
     CHECK_FALSE(result.test.has_value());
     CHECK(result.kernel.type == stringkernel::KernelType::weighted_degree);
     CHECK(result.kernel.degree == 5);
+    CHECK(result.kernel.decay == 0.5);
     CHECK_FALSE(result.help);
     CHECK_FALSE(result.version);
 }
@@ -83,7 +84,7 @@ TEST_CASE("CLI consumes the complete bounded integer token", "[options]") {
         REQUIRE_THROWS_AS(stringkernel::parse_options({"-train", "a", "-k", token}),
                           std::invalid_argument);
     }
-    for (const std::string_view token : {"-1", "2", "01x", "1.0", "+-0", "2147483648"}) {
+    for (const std::string_view token : {"-1", "4", "99", "01x", "1.0", "+-0", "2147483648"}) {
         CAPTURE(token);
         REQUIRE_THROWS_AS(stringkernel::parse_options({"-train", "a", "-t", token}),
                           std::invalid_argument);
@@ -99,4 +100,47 @@ TEST_CASE("CLI parses signed positive integers without numeric prefixes", "[opti
     const auto result = stringkernel::parse_options({"-train", "a", "-k", "+2", "-t", "+1"});
     CHECK(result.kernel.degree == 2);
     CHECK(result.kernel.type == stringkernel::KernelType::weighted_degree);
+}
+
+TEST_CASE("CLI accepts named and stable numeric kernel selectors", "[options][kernels]") {
+    using stringkernel::KernelType;
+    CHECK(stringkernel::parse_options({"-train", "a", "--kernel", "positional"}).kernel.type ==
+          KernelType::distance);
+    CHECK(stringkernel::parse_options({"-train", "a", "--kernel", "weighted-degree"}).kernel.type ==
+          KernelType::weighted_degree);
+    CHECK(stringkernel::parse_options({"-train", "a", "--kernel", "spectrum"}).kernel.type ==
+          KernelType::spectrum);
+    const auto subsequence =
+        stringkernel::parse_options({"-train", "a", "--kernel", "subsequence"});
+    CHECK(subsequence.kernel.type == KernelType::subsequence);
+    CHECK(subsequence.kernel.decay == 0.5);
+    CHECK(stringkernel::parse_options({"-train", "a", "-t", "0"}).kernel.type ==
+          KernelType::distance);
+    CHECK(stringkernel::parse_options({"-train", "a", "-t", "1"}).kernel.type ==
+          KernelType::weighted_degree);
+    CHECK(stringkernel::parse_options({"-train", "a", "-t", "2"}).kernel.type ==
+          KernelType::spectrum);
+    CHECK(stringkernel::parse_options({"-train", "a", "-t", "3"}).kernel.type ==
+          KernelType::subsequence);
+    const auto custom = stringkernel::parse_options(
+        {"-train", "a", "--kernel", "subsequence", "-k", "3", "--decay", "0.25"});
+    CHECK(custom.kernel.degree == 3);
+    CHECK(custom.kernel.decay == 0.25);
+}
+
+TEST_CASE("CLI restricts decay to subsequence and rejects malformed selectors", "[options]") {
+    using stringkernel::parse_options;
+    CHECK_THROWS_AS(parse_options({"-train", "a", "--kernel", "spectrum", "-t", "2"}),
+                    std::invalid_argument);
+    CHECK_THROWS_AS(parse_options({"-train", "a", "--kernel", "spectrum", "--decay", "0.5"}),
+                    std::invalid_argument);
+    CHECK_THROWS_AS(parse_options({"-train", "a", "--decay", "0.5"}), std::invalid_argument);
+    CHECK_THROWS_AS(parse_options({"-train", "a", "--kernel", "unknown"}), std::invalid_argument);
+    for (const std::string_view value : {"", "0", "-0.2", "1.1", "nan", "inf", "0.5x"}) {
+        CAPTURE(value);
+        CHECK_THROWS_AS(parse_options({"-train", "a", "--kernel", "subsequence", "--decay", value}),
+                        std::invalid_argument);
+    }
+    CHECK_THROWS_AS(parse_options({"-train", "a", "--decay", "0.5", "--decay", "0.25"}),
+                    std::invalid_argument);
 }

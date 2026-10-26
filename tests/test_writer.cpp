@@ -116,6 +116,51 @@ TEST_CASE("writer supports unequal WDSK lengths and equal-length DSK") {
     CHECK(values(dsk.str())[0][2] == Catch::Approx(0.5));
 }
 
+TEST_CASE("writer emits exact spectrum and subsequence normalized matrices") {
+    const Dataset reference{{"ACG", 1}, {"ACT", 1}, {"GGA", -1}, {"GGT", -1}};
+    std::ostringstream spectrum, subsequence, changed_decay;
+    write_precomputed(spectrum, reference, reference, {KernelType::spectrum, 2});
+    write_precomputed(subsequence, reference, reference, {KernelType::subsequence, 2, 0.5});
+    write_precomputed(changed_decay, reference, reference, {KernelType::subsequence, 2, 0.25});
+    const auto spectrum_values = values(spectrum.str());
+    const auto subsequence_values = values(subsequence.str());
+    const auto changed_values = values(changed_decay.str());
+    REQUIRE(spectrum_values.size() == 4);
+    REQUIRE(subsequence_values.size() == 4);
+    CHECK(spectrum_values[0][3] == Catch::Approx(0.5));
+    CHECK(spectrum_values[0][4] == 0);
+    CHECK(spectrum_values[2][5] == Catch::Approx(0.5));
+    CHECK(subsequence_values[0][3] == Catch::Approx(4.0 / 9.0));
+    CHECK(subsequence_values[0][4] == 0);
+    CHECK(changed_values[0][3] == Catch::Approx(16.0 / 33.0));
+    for (std::size_t i = 0; i < 4; ++i) {
+        CHECK(spectrum_values[i][i + 2] == Catch::Approx(1));
+        CHECK(subsequence_values[i][i + 2] == Catch::Approx(1));
+    }
+}
+
+TEST_CASE("writer preflights subsequence numeric overflow before writing rows") {
+    const Dataset data{{std::string(550, 'A'), 1}};
+    std::ostringstream output;
+    CHECK_THROWS_AS(write_precomputed(output, data, data, {KernelType::subsequence, 275, 1.0}),
+                    std::overflow_error);
+    CHECK(output.str().empty());
+}
+
+TEST_CASE("new kernels allow k beyond sequence length as empty feature vectors") {
+    const Dataset data{{"AC", 1}, {"GT", -1}};
+    for (const auto type : {KernelType::spectrum, KernelType::subsequence}) {
+        std::ostringstream output;
+        write_precomputed(output, data, data, {type, 3, 0.5});
+        const auto matrix = values(output.str());
+        REQUIRE(matrix.size() == 2);
+        CHECK(matrix[0][2] == 0);
+        CHECK(matrix[0][3] == 0);
+        CHECK(matrix[1][2] == 0);
+        CHECK(matrix[1][3] == 0);
+    }
+}
+
 TEST_CASE("invalid datasets are rejected before any output") {
     const Dataset good{{"AA", 1}};
     const std::vector<Dataset> invalid{{},
