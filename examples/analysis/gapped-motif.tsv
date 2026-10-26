@@ -1,0 +1,6 @@
+train AXBXC 1
+train AYBYC 1
+train PXPXR -1
+train PYPYR -1
+test AZBWC 1
+test PZPWR -1

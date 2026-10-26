@@ -1,0 +1,6 @@
+train ACGT 1
+train TACG 1
+train ATGT -1
+train TATG -1
+test GACG 1
+test GATG -1
