@@ -142,3 +142,62 @@ The fixture uses `ACG`/`ACT` as positive and `GGA`/`GGT` as negative training ex
 Explain that DSK compares matching positions, WDSK compares same-position substrings across orders, spectrum compares exact contiguous k-mers regardless of position, and SSK compares ordered gapped patterns while discounting gaps. Inputs remain whitespace-delimited byte tokens, not FASTA; no alphabet validation, alignment, tuning, or cross-validation is implied.
 
 Derived complexity: with mean token length `L`, SSK pair evaluation is `O(k L^2)` and a dense `N x N` matrix is `O(N^2 k L^2)` before solver cost; mark this analytical bound, not a benchmark. Spectrum is expected `O(k(Lx+Ly))` per pair with count maps; label this as an algorithmic/implementation estimate, not measured timing. Do not make speed or accuracy claims without a benchmark that can lose.
+
+---
+
+# Kernel separation analysis
+
+Status: locally implemented and verified; awaiting current-head hosted review and ordered promotion.
+
+## Goal
+
+Add a reproducible, approachable analysis showing how positional, weighted-degree, spectrum, and subsequence kernels separate three small labeled sequence datasets with distinct alignment, movement, and gap patterns.
+
+## Exact blast radius
+
+- Modify `implementation_plan.md` — this plan and measured evidence.
+- Add `examples/analysis/aligned-motif.tsv` — tiny equal-length aligned motif set.
+- Add `examples/analysis/moved-motif.tsv` — same motif at different positions.
+- Add `examples/analysis/gapped-motif.tsv` — ordered motif with insertions/gaps.
+- Add `scripts/analyze_separation.py` — stdlib-only reproducible runner; invoke the built converter and actual LIBSVM tools, independently calculate class-pair similarity summaries, and emit a self-contained SVG/Markdown report to a caller-selected output directory.
+- Add `tests/test_analysis.py` — check generated report content, deterministic summaries, output safety, and actual solver predictions using supplied executable paths.
+- Modify `tests/CMakeLists.txt` — register analysis behavior/integration test with built executable paths.
+- Add `docs/ANALYSIS.md` — explain dataset construction, similarity heatmaps, results, limitations, and exact rerun command.
+- Add `docs/analysis/similarities.svg` — published deterministic figure; the integration test pins the generated SVG bytes to this artifact.
+- Modify `.gitattributes` — keep the published SVG's LF bytes stable across Windows checkouts.
+- Modify `README.md` — link the analysis beside kernel-selection guidance.
+
+## Design and sequence
+
+1. Define the three miniature datasets with transparent labels and held-out examples; use no external data, package, network, statistical claim, or newly inferred biological alphabet.
+2. Write the test first. It invokes the runner against supplied converter/trainer/predictor paths and asserts expected labels, independently recomputed pairwise similarities, deterministic report shape, SVG validity, and no writes outside the selected output directory. Record the initial RED result.
+3. Implement a standard-library analysis runner. Converter output remains the source of actual solver Gram matrices; a separate tiny feature-map oracle calculates per-class within/between similarity summaries. Train/predict through the real LIBSVM binaries on designated supported-kernel/dataset combinations. Fail with useful diagnostics on process or artifact errors.
+4. Generate a readable SVG heatmap and Markdown summary using explicit kernel and parameter settings. Do not add plots, ML, or other dependencies; commit only the SVG intentionally published as documentation, not build outputs.
+5. Document what the examples demonstrate and what they cannot establish. Distinguish observations on these constructed records from accuracy, generalization, or comparative speed claims.
+6. Run focused RED/GREEN analysis checks, then the repository's development/sanitizer/coverage/format checks and exact-head hosted CI. Obtain independent review; merge feature PR to `dev`, promote by a separate PR to `master`, close the issue with evidence, and remove both worktrees.
+
+## Risks and trade-offs
+
+Synthetic records make the kernel differences legible but are not representative datasets. Results must be framed as geometry demonstrations and correctness examples. Keeping all dataset tokens tiny bounds the explicit subsequence oracle to test-only inputs. SVG generation avoids a plotting dependency but needs a test that validates key data labels and heatmap dimensions. The runner writes only beneath an explicitly selected output directory and does not overwrite source data.
+
+## Acceptance and proof
+
+- Three datasets each expose the intended alignment/movement/gap distinction.
+- Actual converter, LIBSVM train, and predict run successfully; predictions match the held-out labels selected by the fixture design.
+- Similarity numbers match an independently specified feature-map calculation; within-class/between-class summaries are labeled as this fixture's observations.
+- The SVG and Markdown are regenerated deterministically and tested for content.
+- No runtime dependencies, kernel API changes, production behavior changes, public data provenance assumptions, accuracy claims, or speed claims are added.
+- All current-head hosted gates pass; promotion is merged to master and issue closed with artifact-backed evidence.
+
+RED evidence: after adding the end-to-end report test and CTest registration, direct execution failed because `scripts/analyze_separation.py` did not yet exist (expected missing implementation). No production code was added before this check.
+
+
+## Local completion evidence
+
+- RED: the first analysis integration test failed because `scripts/analyze_separation.py` did not yet exist.
+- MEASURED: development, ASan/UBSan, and coverage configurations each passed all 50 CTest checks after implementation.
+- MEASURED: project-only line coverage remained 391/398 (98.2%); the existing 98% floor passed.
+- MEASURED: all three actual converter matrices matched the separate feature-map oracle; real LIBSVM training and prediction recovered `1, -1` on each held-out pair.
+- MEASURED fixture means (within-class, between-class): aligned weighted degree 0.700/0.425; moved spectrum 0.500/0.000; gapped subsequence 0.013/0.000. These describe only the constructed four-record training sets.
+- MEASURED: regenerated SVG SHA-256 equals the published `docs/analysis/similarities.svg` digest `e22ff26b944e4fbcdab72dcac911406f3194678e567dbc6b4004fcd6f5bb90c1`.
+- Python syntax compilation and `git diff --check` passed. Hosted CI and independent review remain required before promotion.
