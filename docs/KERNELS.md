@@ -94,7 +94,8 @@ and in `(0, 1]`; the default is `0.5`.
 For `ACG` and `AG` with `k=2` and `lambda=0.5`, the only shared feature is `AG`.
 Its gap-only feature value is `0.5` in `ACG` and `1` in `AG`. The `ACG` self
 value is `1^2 + 0.5^2 + 1^2 = 2.25`, so the normalized kernel is `1/3`. For
-spectrum `k=2`, `AG` has an empty feature map and the result is zero.
+spectrum `k=2`, `ACG` has features `{AC, CG}` and `AG` has `{AG}`; the maps
+have no features in common, so the result is zero.
 
 The dynamic program adds one matched position pair at each order and discounts
 the gaps between consecutive matches. With sequence lengths `n` and `m`, it uses
@@ -108,7 +109,8 @@ gapped ordered matches fit the problem and sequence lengths are manageable.
 The writer computes all sequence self-kernels before writing a matrix row. If
 the SSK dynamic program or its final value exceeds the supported numeric range,
 conversion fails instead of emitting a non-finite value or silently replacing a
-nonempty diagonal with zero. `k > length` remains a valid empty-feature case.
+nonempty diagonal with zero. For SSK, `k > length` remains a valid
+empty-feature case.
 
 For both new kernels, an empty feature map returns normalized zero. Identical
 sequences with a nonempty feature map normalize to one. Inputs are the existing

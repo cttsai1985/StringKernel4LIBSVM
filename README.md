@@ -131,8 +131,9 @@ kernel and a gap-decay value. Keep the same kernel settings for both matrices:
 
 As a tiny feature example, `ACG` and `AG` share the length-2 ordered
 subsequence `AG` with a gap. With decay `0.5`, their normalized subsequence
-kernel is `1/3`; their spectrum kernel at `k=2` is zero because `AG` has no
-contiguous 2-mer. See [the formulas, parameter meanings, and analytical costs](docs/KERNELS.md).
+kernel is `1/3`; their spectrum `k=2` maps are `{AC, CG}` and `{AG}`, so they
+share no features and the score is zero. See [the formulas, parameter meanings,
+and analytical costs](docs/KERNELS.md).
 
 These examples still use the repository's input format: one case-sensitive byte
 token and one finite label per line. Inputs are not parsed as FASTA, and the
@@ -142,7 +143,8 @@ converter kernel and parameter values, and the test matrix must keep the origina
 training row order. The converter's `--kernel` chooses sequence similarity;
 LIBSVM's separate `svm-train -t 4` selects its precomputed-matrix mode. A `k`
 larger than a sequence length is valid and gives that sequence an empty feature
-map for the selected kernel.
+map for spectrum or subsequence. WDSK still includes all available substring
+orders up to the sequence length, and DSK does not use `k` in its score.
 
 ## Develop and install
 
