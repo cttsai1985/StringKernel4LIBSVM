@@ -186,3 +186,5 @@ Synthetic records make the kernel differences legible but are not representative
 - The SVG and Markdown are regenerated deterministically and tested for content.
 - No runtime dependencies, kernel API changes, production behavior changes, public data provenance assumptions, accuracy claims, or speed claims are added.
 - All current-head hosted gates pass; promotion is merged to master and issue closed with artifact-backed evidence.
+
+RED evidence: after adding the end-to-end report test and CTest registration, direct execution failed because `scripts/analyze_separation.py` did not yet exist (expected missing implementation). No production code was added before this check.

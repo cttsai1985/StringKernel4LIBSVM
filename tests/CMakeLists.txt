@@ -14,9 +14,14 @@ add_test(NAME libsvm_integration
   --trainer "$<TARGET_FILE:svm-train>" --predictor "$<TARGET_FILE:svm-predict>"
   --source "${PROJECT_SOURCE_DIR}" --cmake "${CMAKE_COMMAND}"
   --build "${PROJECT_BINARY_DIR}" --config "$<CONFIG>")
+add_test(NAME separation_analysis
+  COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/test_analysis.py"
+  --converter "$<TARGET_FILE:StringKernelConverter>"
+  --trainer "$<TARGET_FILE:svm-train>" --predictor "$<TARGET_FILE:svm-predict>"
+  --source "${PROJECT_SOURCE_DIR}")
 add_test(NAME dependency_pins
   COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/test_dependency_pins.py")
 add_test(NAME dependency_bootstrap
   COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/test_fetch_libsvm.py")
-set_tests_properties(cli libsvm_integration dependency_pins dependency_bootstrap
+set_tests_properties(cli libsvm_integration separation_analysis dependency_pins dependency_bootstrap
   PROPERTIES TIMEOUT 120)
