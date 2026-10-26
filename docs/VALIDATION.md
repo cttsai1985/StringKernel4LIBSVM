@@ -169,3 +169,38 @@ CI checks a clean checkout before bootstrap on Linux, macOS, and Windows; the
 source-tracking check and expected configure failure prevent a committed solver
 copy or implicit setup from silently returning. Consult PR #4 for exact-head
 hosted results and independent review before the dev/master promotion.
+
+## Spectrum and subsequence kernels (issue #6)
+
+Test-first RED: before adding the public enum values and helper APIs, the selected
+Catch2 build failed on missing `KernelType::spectrum`, `KernelType::subsequence`,
+the decay field, and the new kernel functions. The tests specified the feature
+maps independently by counting contiguous k-mers and explicitly enumerating
+ordered subsequence embeddings. Existing numeric IDs `0/1`, WDSK default type,
+degree `5`, and the SSK decay default `0.5` are pinned.
+
+MEASURED local development gate after implementation: all 48 CTest checks passed,
+including the process-level CLI suite, the real LIBSVM workflows, and the
+installation test. MEASURED AddressSanitizer/UndefinedBehaviorSanitizer gate:
+48/48 passed. MEASURED GCC coverage gate: 48/48 passed; project-only coverage
+was 391/398 lines (98.2%), 41/41 functions (100%), and 514/685 branches (75.0%).
+The 98% line floor remained unchanged.
+
+MEASURED independent explicit-embedding oracle: 92,256 normalized matrix
+cells matched explicit feature enumeration across spectrum and subsequence
+`k=1..6`, with subsequence decay `0.5`, `1.0`, and `0.1`; maximum absolute
+numeric difference was `3.3306690738754696e-16`. This is formula verification,
+not a timing or model-quality benchmark. MEASURED real LIBSVM
+classification checks passed exact matrix oracles and recovered the two held-out
+labels for spectrum, SSK at the default decay, and SSK with decay `0.25`. The
+fixture validates execution and expected behavior only; it does not establish
+generalization accuracy.
+
+The new README commands use the same fixture and have been exercised by that
+integration test. MEASURED production (`BUILD_TESTING=OFF`) build succeeded and
+the literal README spectrum and SSK commands each emitted two correct
+predictions (`1`, `-1`). Spectrum is position independent and counts k-mer occurrences;
+SSK accepts ordered gapped subsequences and is the more expensive choice. The
+docs explicitly state the SSK gap-only feature rescaling, empty-feature behavior,
+parameter coupling, and derived `O(k*n*m)` pair-work bound. All speed/accuracy
+language remains analytical or descriptive; no performance claim was measured.
