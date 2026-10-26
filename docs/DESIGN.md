@@ -8,9 +8,12 @@ programs. A project-owned C++17 library handles sequence mathematics and data
 formatting. The solver remains unmodified. This boundary preserves the original
 project purpose and avoids a private solver fork.
 
-`StringKernelConverter -train train.txt [-test target.txt] [-k degree] [-t type]`
+`StringKernelConverter -train train.txt [-test target.txt] [-k K] [-t type]`
 continues to work. Default type is weighted degree (`1`), default degree is `5`;
-type `0` is equal-length positional similarity. Add `--help` and `--version`.
+type `0` is equal-length positional similarity, `2` is spectrum and `3` is
+subsequence. Named selection is also supported with `--kernel`; `--decay` is
+available for subsequence only. `-t 0/1`, the existing defaults, and `-k` stay
+compatible. Add `--help` and `--version`.
 Missing/unknown/duplicate options and incomplete or out-of-range integer tokens
 are errors. Negative degree values are parsed as values and rejected, not
 mistaken for option names. Help/version are standalone commands.
@@ -25,16 +28,25 @@ All project-owned declarations live in `namespace stringkernel`. Public headers
 are self-contained, use scoped names, and contain no global `using namespace`.
 
 ```cpp
-enum class KernelType { distance = 0, weighted_degree = 1 };
+enum class KernelType {
+    distance = 0, weighted_degree = 1, spectrum = 2, subsequence = 3
+};
 struct KernelConfig {
     KernelType type = KernelType::weighted_degree;
     int degree = 5;
+    double decay = 0.5;
     void validate() const;
 };
 double degree_weight(int degree, std::size_t order);
 double weighted_degree(std::string_view a, std::string_view b, int degree);
 double weighted_degree_self(std::string_view sequence, int degree);
+double spectrum_kernel(std::string_view a, std::string_view b, int k);
+double spectrum_self(std::string_view sequence, int k);
+double subsequence_kernel(std::string_view a, std::string_view b, int k, double decay);
+double subsequence_self(std::string_view sequence, int k, double decay);
 double normalize_kernel(double value, double self_a, double self_b);
+double raw_kernel(std::string_view a, std::string_view b, const KernelConfig& config);
+double self_kernel(std::string_view sequence, const KernelConfig& config);
 double kernel_value(std::string_view a, std::string_view b,
                     const KernelConfig& config);
 
@@ -114,6 +126,15 @@ position, extend matching prefixes only through `min(d, remaining positions)` an
 add their degree weights. Its worst-case operation bound is analytically
 `O(L * min(d,L))` per pair, where `L` is the shorter length. This is an algorithmic
 bound, not a measured speedup. Self-kernels can sum `(length-j+1)*beta(j)` directly.
+
+Spectrum uses a position-independent frequency map of exact contiguous k-mers.
+SSK uses the feature map of ordered length-k subsequences with decay on gaps.
+Its implementation uses gap-only feature weights, a common positive rescaling of
+the paper definition that leaves the normalized kernel unchanged. Both new
+kernels share the cosine normalization. See [kernel formulas and analytical
+cost bounds](KERNELS.md) for edge cases and examples. The writer precomputes
+each sequence's self-kernel before emitting matrix rows, then streams normalized
+pair values.
 
 DSK is positional similarity, not edit distance. For equal nonempty lengths,
 return matching positions divided by sequence length. Reject unequal lengths
