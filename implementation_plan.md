@@ -147,7 +147,7 @@ Derived complexity: with mean token length `L`, SSK pair evaluation is `O(k L^2)
 
 # Kernel separation analysis
 
-Status: locally implemented and verified; awaiting current-head hosted review and ordered promotion.
+Status: complete — merged to `master` at `c6841d291761ee5ee6b88d4354d2f872d3223af8`.
 
 ## Goal
 
@@ -200,4 +200,7 @@ RED evidence: after adding the end-to-end report test and CTest registration, di
 - MEASURED: all three actual converter matrices matched the separate feature-map oracle; real LIBSVM training and prediction recovered `1, -1` on each held-out pair.
 - MEASURED fixture means (within-class, between-class): aligned weighted degree 0.700/0.425; moved spectrum 0.500/0.000; gapped subsequence 0.013/0.000. These describe only the constructed four-record training sets.
 - MEASURED: regenerated SVG SHA-256 equals the published `docs/analysis/similarities.svg` digest `e22ff26b944e4fbcdab72dcac911406f3194678e567dbc6b4004fcd6f5bb90c1`.
-- Python syntax compilation and `git diff --check` passed. Hosted CI and independent review remain required before promotion.
+- Feature PR #10 exact-head CI passed all six checks on `111809a`; promotion PR #11 exact-head CI passed all six checks on `6a24e5f`.
+- Independent review passed with no blockers on `111809a`.
+- PR #10 merged to `dev` at `6a24e5f`; PR #11 merged to `master` at `c6841d2` without squashing.
+- Python syntax compilation and `git diff --check` passed.
