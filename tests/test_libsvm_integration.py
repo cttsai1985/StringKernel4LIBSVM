@@ -8,6 +8,7 @@ from pathlib import Path
 import subprocess
 import tempfile
 import unittest
+from itertools import combinations
 
 
 def records(path: Path) -> list[tuple[str, float]]:
@@ -15,24 +16,44 @@ def records(path: Path) -> list[tuple[str, float]]:
             if (parts := line.split())]
 
 
-def feature_map(sequence: str, degree: int) -> dict[tuple[int, int, str], float]:
-    return {(position, order, sequence[position:position + order]):
-            2.0 * (degree - order + 1) / (degree * (degree + 1))
-            for order in range(1, min(degree, len(sequence)) + 1)
-            for position in range(len(sequence) - order + 1)}
+def feature_map(sequence: str, kernel: str, k: int, decay: float) -> dict[object, float]:
+    if kernel == "spectrum":
+        features: dict[object, float] = {}
+        for start in range(max(0, len(sequence) - k + 1)):
+            token = sequence[start:start + k]
+            features[token] = features.get(token, 0.0) + 1.0
+        return features
+    if kernel == "subsequence":
+        features = {}
+        for positions in combinations(range(len(sequence)), k):
+            token = "".join(sequence[position] for position in positions)
+            gaps = positions[-1] - positions[0] + 1 - k
+            features[token] = features.get(token, 0.0) + decay ** gaps
+        return features
+    if kernel == "positional":
+        return {(position, sequence[position]): 1.0 for position in range(len(sequence))}
+    return {
+        (position, order, sequence[position:position + order]):
+            math.sqrt(2.0 * (k - order + 1) / (k * (k + 1)))
+        for order in range(1, min(k, len(sequence)) + 1)
+        for position in range(len(sequence) - order + 1)
+    }
 
 
 def oracle_rows(reference: list[tuple[str, float]], target: list[tuple[str, float]],
-                degree: int = 5) -> list[list[float]]:
-    reference_features = [feature_map(sequence, degree) for sequence, _ in reference]
+                kernel: str = "weighted-degree", k: int = 5,
+                decay: float = 0.5) -> list[list[float]]:
+    reference_features = [feature_map(sequence, kernel, k, decay) for sequence, _ in reference]
     result = []
     for sequence, _ in target:
-        features = feature_map(sequence, degree)
-        result.append([
-            sum(weight for key, weight in features.items() if key in other) /
-            math.sqrt(sum(features.values()) * sum(other.values()))
-            for other in reference_features
-        ])
+        features = feature_map(sequence, kernel, k, decay)
+        self_value = sum(value * value for value in features.values())
+        row = []
+        for other in reference_features:
+            other_self = sum(value * value for value in other.values())
+            raw = sum(value * other.get(key, 0.0) for key, value in features.items())
+            row.append(raw / math.sqrt(self_value * other_self) if self_value and other_self else 0.0)
+        result.append(row)
     return result
 
 
@@ -53,19 +74,28 @@ class LibsvmIntegrationTests(unittest.TestCase):
         return result
 
     def convert(self, reference: Path, target: Path | None, output: Path,
-                converter: Path | None = None) -> None:
+                converter: Path | None = None, kernel: str | None = None,
+                k: int | None = None, decay: float | None = None) -> None:
         arguments = [converter or self.options.converter, "-train", reference]
         if target is not None:
             arguments.extend(["-test", target])
+        if kernel is not None:
+            arguments.extend(["--kernel", kernel])
+        if k is not None:
+            arguments.extend(["-k", str(k)])
+        if decay is not None:
+            arguments.extend(["--decay", str(decay)])
         result = self.run_program(*arguments)
         self.assertEqual(result.stderr, "")
         output.write_text(result.stdout, encoding="utf-8")
 
     def assert_matrix(self, path: Path, reference: list[tuple[str, float]],
-                      target: list[tuple[str, float]]) -> None:
+                      target: list[tuple[str, float]], kernel: str = "weighted-degree",
+                      k: int = 5, decay: float = 0.5) -> None:
         rows = path.read_text(encoding="utf-8").splitlines()
         self.assertEqual(len(rows), len(target))
-        for row_index, (line, expected) in enumerate(zip(rows, oracle_rows(reference, target))):
+        for row_index, (line, expected) in enumerate(
+                zip(rows, oracle_rows(reference, target, kernel, k, decay))):
             tokens = line.split()
             self.assertEqual(float(tokens[0]), target[row_index][1])
             self.assertEqual(len(tokens), len(reference) + 2)
@@ -97,6 +127,32 @@ class LibsvmIntegrationTests(unittest.TestCase):
         self.run_program(self.options.predictor, target_matrix, model, predictions)
         expected = [label for _, label in records(target)]
         self.assertEqual(self.predictions(predictions), expected)
+
+    def test_new_kernels_match_oracles_and_predict_documented_examples(self) -> None:
+        source = self.options.source / "examples" / "string-kernels"
+        reference_path = source / "spectrum-train.tsv"
+        target_path = source / "spectrum-test.tsv"
+        reference = records(reference_path)
+        target = records(target_path)
+        expected = [label for _, label in target]
+        for kernel, decay in [("spectrum", None), ("subsequence", 0.5),
+                              ("subsequence", 0.25)]:
+            with self.subTest(kernel=kernel, decay=decay):
+                suffix = kernel + ("-quarter" if decay == 0.25 else "-default")
+                training_matrix = self.directory / f"{suffix}.train"
+                target_matrix = self.directory / f"{suffix}.test"
+                model = self.directory / f"{suffix}.model"
+                prediction_file = self.directory / f"{suffix}.predictions"
+                self.convert(reference_path, None, training_matrix, kernel=kernel, k=2,
+                             decay=decay)
+                self.convert(reference_path, target_path, target_matrix, kernel=kernel, k=2,
+                             decay=decay)
+                parameter = 0.5 if decay is None else decay
+                self.assert_matrix(training_matrix, reference, reference, kernel, 2, parameter)
+                self.assert_matrix(target_matrix, reference, target, kernel, 2, parameter)
+                self.run_program(self.options.trainer, "-q", "-t", "4", training_matrix, model)
+                self.run_program(self.options.predictor, target_matrix, model, prediction_file)
+                self.assertEqual(self.predictions(prediction_file), expected)
 
     def write_oracle_matrix(self, reference: list[tuple[str, float]],
                             target: list[tuple[str, float]], path: Path) -> None:
