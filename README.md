@@ -139,6 +139,11 @@ kernel is `1/3`; their spectrum `k=2` maps are `{AC, CG}` and `{AG}`, so they
 share no features and the score is zero. See [the formulas, parameter meanings,
 and analytical costs](docs/KERNELS.md).
 
+For a visual walkthrough of aligned, moved, and gapped motifs across three tiny
+datasets, see the [kernel separation analysis](docs/ANALYSIS.md). It includes
+similarity heatmaps and predictions from the actual LIBSVM tools; the examples
+are intentionally constructed and do not estimate real-world accuracy.
+
 These examples still use the repository's input format: one case-sensitive byte
 token and one finite label per line. Inputs are not parsed as FASTA, and the
 converter does not choose an alphabet, align records, tune parameters, or run

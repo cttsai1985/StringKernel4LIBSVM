@@ -8,6 +8,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from xml.etree import ElementTree
 
 
 class SeparationAnalysisTests(unittest.TestCase):
@@ -31,11 +32,15 @@ class SeparationAnalysisTests(unittest.TestCase):
             self.assertIn(b"aligned motif", report)
             self.assertIn(b"moved motif", report)
             self.assertIn(b"gapped motif", report)
-            self.assertIn(b"held-out predictions: `1, -1`", report)
-            self.assertIn(b"class similarity", report)
-            self.assertTrue(graphic.startswith(b"<svg"))
+            self.assertEqual(report.count(b"LIBSVM held-out predictions: `1, -1`"), 3)
+            self.assertIn(b"within class", report)
+            self.assertIn(b"between classes", report)
+            svg = ElementTree.fromstring(graphic)
+            self.assertEqual(svg.tag, "{http://www.w3.org/2000/svg}svg")
             self.assertIn(b"spectrum", graphic)
             self.assertIn(b"subsequence", graphic)
+            published_figure = self.options.source / "docs" / "analysis" / "similarities.svg"
+            self.assertEqual(graphic, published_figure.read_bytes())
             first_paths = sorted(path.relative_to(output).as_posix()
                                  for path in output.rglob("*") if path.is_file())
 
@@ -46,6 +51,14 @@ class SeparationAnalysisTests(unittest.TestCase):
             self.assertEqual(sorted(path.relative_to(output).as_posix()
                                     for path in output.rglob("*") if path.is_file()), first_paths)
             self.assertEqual(first_paths, ["analysis.md", "similarities.svg"])
+
+            readme = self.options.source / "README.md"
+            original_readme = readme.read_bytes()
+            command[command.index("--output-dir") + 1] = str(readme)
+            rejected = subprocess.run(command, capture_output=True, text=True, timeout=90)
+            self.assertEqual(rejected.returncode, 2, rejected.stdout + rejected.stderr)
+            self.assertIn("outside the source checkout", rejected.stderr)
+            self.assertEqual(readme.read_bytes(), original_readme)
 
 
 def main() -> None:
