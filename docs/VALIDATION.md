@@ -179,10 +179,10 @@ maps independently by counting contiguous k-mers and explicitly enumerating
 ordered subsequence embeddings. Existing numeric IDs `0/1`, WDSK default type,
 degree `5`, and the SSK decay default `0.5` are pinned.
 
-MEASURED local development gate after implementation: all 48 CTest checks passed,
+MEASURED local development gate after implementation: all 49 CTest checks passed,
 including the process-level CLI suite, the real LIBSVM workflows, and the
 installation test. MEASURED AddressSanitizer/UndefinedBehaviorSanitizer gate:
-48/48 passed. MEASURED GCC coverage gate: 48/48 passed; project-only coverage
+49/49 passed. MEASURED GCC coverage gate: 49/49 passed; project-only coverage
 was 391/398 lines (98.2%), 41/41 functions (100%), and 514/685 branches (75.0%).
 The 98% line floor remained unchanged.
 
@@ -204,3 +204,5 @@ SSK accepts ordered gapped subsequences and is the more expensive choice. The
 docs explicitly state the SSK gap-only feature rescaling, empty-feature behavior,
 parameter coupling, and derived `O(k*n*m)` pair-work bound. All speed/accuracy
 language remains analytical or descriptive; no performance claim was measured.
+The tiny-decay regression checks both `lambda=1e-300` and the smallest positive
+representable `double`; a gap-free `AA`, `k=2` diagonal stays `1` in both cases.

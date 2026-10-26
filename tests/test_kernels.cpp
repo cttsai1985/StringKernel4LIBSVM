@@ -228,9 +228,11 @@ TEST_CASE("Spectrum and subsequence reject invalid parameters and nonfinite arit
 TEST_CASE("Tiny positive SSK decay retains nonempty gap-free diagonal features",
           "[kernel][subsequence][numeric]") {
     using namespace stringkernel;
-    constexpr double tiny_decay = 1e-300;
-    CHECK(subsequence_self("AA", 2, tiny_decay) == 1);
-    CHECK(kernel_value("AA", "AA", {KernelType::subsequence, 2, tiny_decay}) == 1);
+    for (const auto tiny_decay : {1e-300, std::numeric_limits<double>::denorm_min()}) {
+        CAPTURE(tiny_decay);
+        CHECK(subsequence_self("AA", 2, tiny_decay) == 1);
+        CHECK(kernel_value("AA", "AA", {KernelType::subsequence, 2, tiny_decay}) == 1);
+    }
 }
 
 TEST_CASE("Published degree weights and hand-calculated matches are retained",

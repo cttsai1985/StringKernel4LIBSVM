@@ -1,5 +1,9 @@
 # StringKernel4LIBSVM
 
+Compare labeled sequences, such as DNA fragments or short words. This tool turns
+their similarities into a table for LIBSVM classification or regression: each
+row represents a target sequence, and each column represents a training reference.
+
 StringKernel4LIBSVM converts labeled sequences into normalized string-kernel
 matrices for LIBSVM. It includes the converter, a C++17 kernel library, and the
 unmodified LIBSVM 3.37 training and prediction programs.
