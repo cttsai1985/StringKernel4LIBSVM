@@ -12,6 +12,7 @@
 #include <string>
 #include <string_view>
 #include <tuple>
+#include <unordered_map>
 #include <utility>
 #include <vector>
 
@@ -73,6 +74,65 @@ std::vector<std::string> short_sequences() {
     return result;
 }
 
+using TokenCounts = std::unordered_map<std::string, long double>;
+
+TokenCounts spectrum_features(std::string_view sequence, int k) {
+    TokenCounts counts;
+    if (k <= 0 || static_cast<std::size_t>(k) > sequence.size()) {
+        return counts;
+    }
+    for (std::size_t i = 0; i + static_cast<std::size_t>(k) <= sequence.size(); ++i) {
+        ++counts[std::string(sequence.substr(i, static_cast<std::size_t>(k)))];
+    }
+    return counts;
+}
+
+TokenCounts subsequence_features(std::string_view sequence, int k, double decay) {
+    TokenCounts counts;
+    if (k <= 0 || static_cast<std::size_t>(k) > sequence.size()) {
+        return counts;
+    }
+    std::vector<std::size_t> positions(static_cast<std::size_t>(k));
+    const auto visit = [&](const auto& self, std::size_t depth, std::size_t start) -> void {
+        if (depth == positions.size()) {
+            std::string token;
+            for (const auto position : positions) {
+                token.push_back(sequence[position]);
+            }
+            const auto gaps = positions.back() - positions.front() + 1 - positions.size();
+            counts[token] += std::pow(static_cast<long double>(decay), gaps);
+            return;
+        }
+        const auto remaining = positions.size() - depth;
+        for (std::size_t position = start; position + remaining <= sequence.size(); ++position) {
+            positions[depth] = position;
+            self(self, depth + 1, position + 1);
+        }
+    };
+    visit(visit, 0, 0);
+    return counts;
+}
+
+double feature_dot(const TokenCounts& left, const TokenCounts& right) {
+    long double result = 0;
+    for (const auto& [token, count] : left) {
+        const auto found = right.find(token);
+        if (found != right.end()) {
+            result += count * found->second;
+        }
+    }
+    return static_cast<double>(result);
+}
+
+double oracle_feature_kernel(const TokenCounts& left, const TokenCounts& right) {
+    const auto left_self = feature_dot(left, left);
+    const auto right_self = feature_dot(right, right);
+    if (left_self == 0 || right_self == 0) {
+        return 0;
+    }
+    return feature_dot(left, right) / std::sqrt(left_self * right_self);
+}
+
 } // namespace
 
 TEST_CASE("Default kernel settings remain weighted degree five", "[kernel][defaults]") {
@@ -81,7 +141,85 @@ TEST_CASE("Default kernel settings remain weighted degree five", "[kernel][defau
     CHECK(config.degree == 5);
     CHECK(static_cast<int>(stringkernel::KernelType::distance) == 0);
     CHECK(static_cast<int>(stringkernel::KernelType::weighted_degree) == 1);
+    CHECK(static_cast<int>(stringkernel::KernelType::spectrum) == 2);
+    CHECK(static_cast<int>(stringkernel::KernelType::subsequence) == 3);
+    CHECK(config.decay == approximately(0.5));
     CHECK_NOTHROW(config.validate());
+}
+
+TEST_CASE("Spectrum matches an independently counted fixed-k feature map", "[kernel][spectrum]") {
+    using namespace stringkernel;
+    for (const auto k : {1, 2, 3, 4}) {
+        for (const auto& a : short_sequences()) {
+            CAPTURE(k, a);
+            const auto a_features = spectrum_features(a, k);
+            CHECK(spectrum_kernel(a, a, k) ==
+                  approximately(feature_dot(a_features, a_features)).margin(1e-13));
+            CHECK(spectrum_self(a, k) ==
+                  approximately(feature_dot(a_features, a_features)).margin(1e-13));
+            for (const auto& b : short_sequences()) {
+                CAPTURE(b);
+                CHECK(spectrum_kernel(a, b, k) ==
+                      approximately(feature_dot(a_features, spectrum_features(b, k))).margin(1e-13));
+                CHECK(kernel_value(a, b, {KernelType::spectrum, k}) ==
+                      approximately(oracle_feature_kernel(a_features, spectrum_features(b, k)))
+                          .margin(1e-13));
+            }
+        }
+    }
+    CHECK(spectrum_kernel("AAAA", "AAA", 2) == 6);
+    CHECK(kernel_value("ACG", "GAC", {KernelType::spectrum, 2}) > 0);
+    CHECK(kernel_value("ACG", "GAC", {KernelType::weighted_degree, 2}) == 0);
+    CHECK(kernel_value("ACG", "AG", {KernelType::spectrum, 2}) == 0);
+}
+
+TEST_CASE("Subsequence kernel matches explicit ordered embedding features", "[kernel][subsequence]") {
+    using namespace stringkernel;
+    for (const auto k : {1, 2, 3, 4}) {
+        for (const auto decay : {0.1, 0.5, 1.0}) {
+            for (const auto& a : short_sequences()) {
+                CAPTURE(k, decay, a);
+                const auto a_features = subsequence_features(a, k, decay);
+                CHECK(subsequence_kernel(a, a, k, decay) ==
+                      approximately(feature_dot(a_features, a_features)).margin(1e-13));
+                CHECK(subsequence_self(a, k, decay) ==
+                      approximately(feature_dot(a_features, a_features)).margin(1e-13));
+                for (const auto& b : short_sequences()) {
+                    CAPTURE(b);
+                    const auto b_features = subsequence_features(b, k, decay);
+                    CHECK(subsequence_kernel(a, b, k, decay) ==
+                          approximately(feature_dot(a_features, b_features)).margin(1e-13));
+                    CHECK(kernel_value(a, b, {KernelType::subsequence, k, decay}) ==
+                          approximately(oracle_feature_kernel(a_features, b_features)).margin(1e-13));
+                }
+            }
+        }
+    }
+    CHECK(kernel_value("ACG", "AG", {KernelType::subsequence, 2, 0.5}) == 1);
+    CHECK(subsequence_kernel("AAAA", "AAAA", 2, 1.0) == 36);
+    CHECK(subsequence_self("AAAA", 5, 1.0) == 0);
+}
+
+TEST_CASE("Spectrum and subsequence reject invalid parameters and nonfinite arithmetic",
+          "[kernel][validation]") {
+    using namespace stringkernel;
+    for (const auto k : {0, -1}) {
+        CHECK_THROWS_AS(spectrum_kernel("A", "A", k), std::invalid_argument);
+        CHECK_THROWS_AS(spectrum_self("A", k), std::invalid_argument);
+        CHECK_THROWS_AS(subsequence_kernel("A", "A", k, 0.5), std::invalid_argument);
+        CHECK_THROWS_AS(subsequence_self("A", k, 0.5), std::invalid_argument);
+    }
+    for (const auto decay : {0.0, -0.1, 1.1, std::numeric_limits<double>::infinity(),
+                             std::numeric_limits<double>::quiet_NaN()}) {
+        CHECK_THROWS_AS((KernelConfig{KernelType::subsequence, 2, decay}.validate()),
+                        std::invalid_argument);
+        CHECK_THROWS_AS(subsequence_kernel("ABC", "ABC", 2, decay), std::invalid_argument);
+    }
+    CHECK_THROWS_AS((KernelConfig{KernelType::spectrum, 2, 0.25}.validate()),
+                    std::invalid_argument);
+    CHECK_THROWS_AS((KernelConfig{KernelType::weighted_degree, 2, 0.25}.validate()),
+                    std::invalid_argument);
+    CHECK_THROWS_AS(subsequence_self(std::string(1000, 'A'), 500, 1.0), std::overflow_error);
 }
 
 TEST_CASE("Published degree weights and hand-calculated matches are retained",
