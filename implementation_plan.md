@@ -164,6 +164,7 @@ Add a reproducible, approachable analysis showing how positional, weighted-degre
 - Modify `tests/CMakeLists.txt` — register analysis behavior/integration test with built executable paths.
 - Add `docs/ANALYSIS.md` — explain dataset construction, similarity heatmaps, results, limitations, and exact rerun command.
 - Add `docs/analysis/similarities.svg` — published deterministic figure; the integration test pins the generated SVG bytes to this artifact.
+- Modify `.gitattributes` — keep the published SVG's LF bytes stable across Windows checkouts.
 - Modify `README.md` — link the analysis beside kernel-selection guidance.
 
 ## Design and sequence
