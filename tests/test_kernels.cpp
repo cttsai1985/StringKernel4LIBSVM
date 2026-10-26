@@ -159,8 +159,9 @@ TEST_CASE("Spectrum matches an independently counted fixed-k feature map", "[ker
                   approximately(feature_dot(a_features, a_features)).margin(1e-13));
             for (const auto& b : short_sequences()) {
                 CAPTURE(b);
-                CHECK(spectrum_kernel(a, b, k) ==
-                      approximately(feature_dot(a_features, spectrum_features(b, k))).margin(1e-13));
+                CHECK(
+                    spectrum_kernel(a, b, k) ==
+                    approximately(feature_dot(a_features, spectrum_features(b, k))).margin(1e-13));
                 CHECK(kernel_value(a, b, {KernelType::spectrum, k}) ==
                       approximately(oracle_feature_kernel(a_features, spectrum_features(b, k)))
                           .margin(1e-13));
@@ -173,7 +174,8 @@ TEST_CASE("Spectrum matches an independently counted fixed-k feature map", "[ker
     CHECK(kernel_value("ACG", "AG", {KernelType::spectrum, 2}) == 0);
 }
 
-TEST_CASE("Subsequence kernel matches explicit ordered embedding features", "[kernel][subsequence]") {
+TEST_CASE("Subsequence kernel matches explicit ordered embedding features",
+          "[kernel][subsequence]") {
     using namespace stringkernel;
     for (const auto k : {1, 2, 3, 4}) {
         for (const auto decay : {0.1, 0.5, 1.0}) {
@@ -189,13 +191,14 @@ TEST_CASE("Subsequence kernel matches explicit ordered embedding features", "[ke
                     const auto b_features = subsequence_features(b, k, decay);
                     CHECK(subsequence_kernel(a, b, k, decay) ==
                           approximately(feature_dot(a_features, b_features)).margin(1e-13));
-                    CHECK(kernel_value(a, b, {KernelType::subsequence, k, decay}) ==
-                          approximately(oracle_feature_kernel(a_features, b_features)).margin(1e-13));
+                    CHECK(
+                        kernel_value(a, b, {KernelType::subsequence, k, decay}) ==
+                        approximately(oracle_feature_kernel(a_features, b_features)).margin(1e-13));
                 }
             }
         }
     }
-    CHECK(kernel_value("ACG", "AG", {KernelType::subsequence, 2, 0.5}) == 1);
+    CHECK(kernel_value("ACG", "AG", {KernelType::subsequence, 2, 0.5}) == approximately(1.0 / 3.0));
     CHECK(subsequence_kernel("AAAA", "AAAA", 2, 1.0) == 36);
     CHECK(subsequence_self("AAAA", 5, 1.0) == 0);
 }
@@ -219,7 +222,7 @@ TEST_CASE("Spectrum and subsequence reject invalid parameters and nonfinite arit
                     std::invalid_argument);
     CHECK_THROWS_AS((KernelConfig{KernelType::weighted_degree, 2, 0.25}.validate()),
                     std::invalid_argument);
-    CHECK_THROWS_AS(subsequence_self(std::string(1000, 'A'), 500, 1.0), std::overflow_error);
+    CHECK_THROWS_AS(subsequence_self(std::string(550, 'A'), 275, 1.0), std::overflow_error);
 }
 
 TEST_CASE("Published degree weights and hand-calculated matches are retained",

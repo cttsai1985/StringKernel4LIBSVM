@@ -47,11 +47,11 @@ void validate_lengths(const Dataset& reference, const Dataset& target) {
     }
 }
 
-std::vector<double> self_values(const Dataset& data, int degree) {
+std::vector<double> self_values(const Dataset& data, const KernelConfig& config) {
     std::vector<double> result;
     result.reserve(data.size());
     for (const auto& sample : data) {
-        result.push_back(weighted_degree_self(sample.sequence, degree));
+        result.push_back(self_kernel(sample.sequence, config));
     }
     return result;
 }
@@ -72,12 +72,9 @@ void write_precomputed(std::ostream& output, const Dataset& reference, const Dat
         validate_lengths(reference, target);
     }
     require_output(output);
-    const bool weighted = config.type == KernelType::weighted_degree;
-    const auto reference_self =
-        weighted ? self_values(reference, config.degree) : std::vector<double>{};
-    const auto separate_self = weighted && &reference != &target
-                                   ? self_values(target, config.degree)
-                                   : std::vector<double>{};
+    const auto reference_self = self_values(reference, config);
+    const auto separate_self =
+        &reference != &target ? self_values(target, config) : std::vector<double>{};
     const auto& target_self = &reference == &target ? reference_self : separate_self;
     std::ostringstream row;
     row.imbue(std::locale::classic());
@@ -88,10 +85,8 @@ void write_precomputed(std::ostream& output, const Dataset& reference, const Dat
         row << target[i].label << " 0:" << i + 1;
         for (std::size_t j = 0; j < reference.size(); ++j) {
             const double value =
-                weighted ? normalize_kernel(weighted_degree(target[i].sequence,
-                                                            reference[j].sequence, config.degree),
-                                            target_self[i], reference_self[j])
-                         : kernel_value(target[i].sequence, reference[j].sequence, config);
+                normalize_kernel(raw_kernel(target[i].sequence, reference[j].sequence, config),
+                                 target_self[i], reference_self[j]);
             row << ' ' << j + 1 << ':' << value;
         }
         output << row.str() << '\n';

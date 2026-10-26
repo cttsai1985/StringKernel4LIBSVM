@@ -72,9 +72,25 @@ class ConverterTests(unittest.TestCase):
         for degree in ["0", "-1", "5.5", "x5", "5x", "", "2147483648"]:
             with self.subTest(degree=degree):
                 self.assert_failure("-train", str(self.train), "-k", degree)
-        for kernel in ["-1", "2", "1.0", "x1"]:
+        for kernel in ["-1", "4", "1.0", "x1"]:
             with self.subTest(kernel=kernel):
                 self.assert_failure("-train", str(self.train), "-t", kernel)
+
+    def test_named_new_kernels_and_parameter_validation(self) -> None:
+        self.train.write_text("ACG 1\nACT 1\nGGA -1\nGGT -1\n", encoding="utf-8")
+        for kernel in ["spectrum", "subsequence"]:
+            result = self.run_converter("-train", str(self.train), "--kernel", kernel, "-k", "2")
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertEqual(len(result.stdout.splitlines()), 4)
+        invalid = [
+            ["--kernel", "spectrum", "-t", "2"],
+            ["--kernel", "spectrum", "--decay", "0.5"],
+            ["--kernel", "subsequence", "--decay", "nan"],
+            ["--kernel", "subsequence", "--decay", "0"],
+        ]
+        for options in invalid:
+            with self.subTest(options=options):
+                self.assert_failure("-train", str(self.train), *options)
 
     def test_invalid_record_is_diagnosed_before_output(self) -> None:
         for record in ["BAD", "BAD nan", "BAD inf", "BAD 1e9999", "BAD 1 extra", "BAD 2x",

@@ -1,6 +1,7 @@
 #include "CliOptions.h"
 
 #include <charconv>
+#include <cmath>
 #include <set>
 #include <stdexcept>
 #include <string>
@@ -10,7 +11,8 @@ namespace stringkernel {
 namespace {
 
 bool is_value_option(std::string_view option) {
-    return option == "-train" || option == "-test" || option == "-k" || option == "-t";
+    return option == "-train" || option == "-test" || option == "-k" || option == "-t" ||
+           option == "--kernel" || option == "--decay";
 }
 
 int parse_integer(std::string_view token, std::string_view option) {
@@ -31,6 +33,34 @@ int parse_integer(std::string_view token, std::string_view option) {
         throw invalid_integer();
     }
     return value;
+}
+
+double parse_decimal(std::string_view token, std::string_view option) {
+    double value = 0;
+    const auto parsed = std::from_chars(token.data(), token.data() + token.size(), value,
+                                        std::chars_format::general);
+    if (token.empty() || parsed.ec != std::errc() || parsed.ptr != token.data() + token.size() ||
+        !std::isfinite(value)) {
+        throw std::invalid_argument(std::string(option) + " requires a finite decimal number");
+    }
+    return value;
+}
+
+KernelType parse_kernel_name(std::string_view value) {
+    if (value == "positional") {
+        return KernelType::distance;
+    }
+    if (value == "weighted-degree") {
+        return KernelType::weighted_degree;
+    }
+    if (value == "spectrum") {
+        return KernelType::spectrum;
+    }
+    if (value == "subsequence") {
+        return KernelType::subsequence;
+    }
+    throw std::invalid_argument(
+        "--kernel must be positional, weighted-degree, spectrum, or subsequence");
 }
 
 std::filesystem::path parse_path(std::string_view value, std::string_view option) {
@@ -75,27 +105,41 @@ Options parse_options(const std::vector<std::string_view>& arguments) {
             options.test = parse_path(value, option);
         } else if (option == "-k") {
             options.kernel.degree = parse_integer(value, option);
-        } else {
+        } else if (option == "-t") {
             options.kernel.type = static_cast<KernelType>(parse_integer(value, option));
+        } else if (option == "--kernel") {
+            options.kernel.type = parse_kernel_name(value);
+        } else {
+            options.kernel.decay = parse_decimal(value, option);
         }
     }
     if (options.train.empty()) {
         throw std::invalid_argument("-train is required");
+    }
+    if (seen.count("-t") != 0 && seen.count("--kernel") != 0) {
+        throw std::invalid_argument("-t and --kernel select the kernel and cannot be combined");
+    }
+    if (seen.count("--decay") != 0 && options.kernel.type != KernelType::subsequence) {
+        throw std::invalid_argument("--decay is only valid with --kernel subsequence");
     }
     options.kernel.validate();
     return options;
 }
 
 std::string_view usage_text() {
-    return "Usage: StringKernelConverter -train FILE [-test FILE] [-k DEGREE] [-t TYPE]\n"
+    return "Usage: StringKernelConverter -train FILE [-test FILE] [-k K] [-t TYPE | --kernel NAME] "
+           "[--decay LAMBDA]\n"
            "       StringKernelConverter --help\n"
            "       StringKernelConverter --version\n"
            "\n"
            "Convert sequence/label records to LIBSVM precomputed kernels.\n"
            "  -train FILE  Training reference sequences and labels (required)\n"
            "  -test FILE   Target sequences and labels (defaults to training data)\n"
-           "  -k DEGREE    Positive maximum substring degree (default: 5)\n"
-           "  -t TYPE      0: equal-length positional similarity; 1: weighted degree (default)\n"
+           "  -k K         Positive kernel length/order (default: 5)\n"
+           "  -t TYPE      Stable numeric kernel ID: 0 positional, 1 weighted degree, 2 spectrum, "
+           "3 subsequence\n"
+           "  --kernel     positional, weighted-degree, spectrum, or subsequence\n"
+           "  --decay      SSK gap decay, finite in (0, 1] (default: 0.5)\n"
            "  --help       Show this help\n"
            "  --version    Show project and bundled LIBSVM versions\n";
 }
