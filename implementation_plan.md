@@ -147,7 +147,7 @@ Derived complexity: with mean token length `L`, SSK pair evaluation is `O(k L^2)
 
 # Kernel separation analysis
 
-Status: scoped for issue-linked implementation.
+Status: locally implemented and verified; awaiting current-head hosted review and ordered promotion.
 
 ## Goal
 
@@ -189,3 +189,14 @@ Synthetic records make the kernel differences legible but are not representative
 - All current-head hosted gates pass; promotion is merged to master and issue closed with artifact-backed evidence.
 
 RED evidence: after adding the end-to-end report test and CTest registration, direct execution failed because `scripts/analyze_separation.py` did not yet exist (expected missing implementation). No production code was added before this check.
+
+
+## Local completion evidence
+
+- RED: the first analysis integration test failed because `scripts/analyze_separation.py` did not yet exist.
+- MEASURED: development, ASan/UBSan, and coverage configurations each passed all 50 CTest checks after implementation.
+- MEASURED: project-only line coverage remained 391/398 (98.2%); the existing 98% floor passed.
+- MEASURED: all three actual converter matrices matched the separate feature-map oracle; real LIBSVM training and prediction recovered `1, -1` on each held-out pair.
+- MEASURED fixture means (within-class, between-class): aligned weighted degree 0.700/0.425; moved spectrum 0.500/0.000; gapped subsequence 0.013/0.000. These describe only the constructed four-record training sets.
+- MEASURED: regenerated SVG SHA-256 equals the published `docs/analysis/similarities.svg` digest `e22ff26b944e4fbcdab72dcac911406f3194678e567dbc6b4004fcd6f5bb90c1`.
+- Python syntax compilation and `git diff --check` passed. Hosted CI and independent review remain required before promotion.
