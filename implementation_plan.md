@@ -163,6 +163,7 @@ Add a reproducible, approachable analysis showing how positional, weighted-degre
 - Add `tests/test_analysis.py` — check generated report content, deterministic summaries, output safety, and actual solver predictions using supplied executable paths.
 - Modify `tests/CMakeLists.txt` — register analysis behavior/integration test with built executable paths.
 - Add `docs/ANALYSIS.md` — explain dataset construction, similarity heatmaps, results, limitations, and exact rerun command.
+- Add `docs/analysis/similarities.svg` — published deterministic figure; the integration test pins the generated SVG bytes to this artifact.
 - Modify `README.md` — link the analysis beside kernel-selection guidance.
 
 ## Design and sequence
@@ -170,7 +171,7 @@ Add a reproducible, approachable analysis showing how positional, weighted-degre
 1. Define the three miniature datasets with transparent labels and held-out examples; use no external data, package, network, statistical claim, or newly inferred biological alphabet.
 2. Write the test first. It invokes the runner against supplied converter/trainer/predictor paths and asserts expected labels, independently recomputed pairwise similarities, deterministic report shape, SVG validity, and no writes outside the selected output directory. Record the initial RED result.
 3. Implement a standard-library analysis runner. Converter output remains the source of actual solver Gram matrices; a separate tiny feature-map oracle calculates per-class within/between similarity summaries. Train/predict through the real LIBSVM binaries on designated supported-kernel/dataset combinations. Fail with useful diagnostics on process or artifact errors.
-4. Generate a readable SVG heatmap and Markdown summary using explicit kernel and parameter settings. Do not add plots, ML, or other dependencies; do not commit generated build artifacts.
+4. Generate a readable SVG heatmap and Markdown summary using explicit kernel and parameter settings. Do not add plots, ML, or other dependencies; commit only the SVG intentionally published as documentation, not build outputs.
 5. Document what the examples demonstrate and what they cannot establish. Distinguish observations on these constructed records from accuracy, generalization, or comparative speed claims.
 6. Run focused RED/GREEN analysis checks, then the repository's development/sanitizer/coverage/format checks and exact-head hosted CI. Obtain independent review; merge feature PR to `dev`, promote by a separate PR to `master`, close the issue with evidence, and remove both worktrees.
 
